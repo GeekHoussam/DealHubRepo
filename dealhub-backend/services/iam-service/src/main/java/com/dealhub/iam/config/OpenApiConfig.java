@@ -1,0 +1,56 @@
+package com.dealhub.iam.config;
+
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+
+@Configuration
+public class OpenApiConfig {
+
+    /**
+     * This value is used so that Swagger "Try it out"
+     * calls the Gateway instead of the IAM service directly.
+     *
+     * Example:
+     * app.openapi.server-url=http://localhost:8080
+     */
+    @Value("${app.openapi.server-url:}")
+    private String serverUrl;
+
+    @Bean
+    public OpenAPI openAPI() {
+
+        OpenAPI openAPI = new OpenAPI()
+                .info(new Info()
+                        .title("DealHub IAM Service API")
+                        .description("Authentication & Authorization APIs for DealHub")
+                        .version("1.0.0")
+                )
+                // JWT security definition
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
+                .components(
+                        new io.swagger.v3.oas.models.Components()
+                                .addSecuritySchemes(
+                                        "bearerAuth",
+                                        new SecurityScheme()
+                                                .type(SecurityScheme.Type.HTTP)
+                                                .scheme("bearer")
+                                                .bearerFormat("JWT")
+                                )
+                );
+
+        // ✅ IMPORTANT: Force Swagger to call the Gateway (8080) instead of IAM (8081)
+        if (serverUrl != null && !serverUrl.isBlank()) {
+            openAPI.setServers(List.of(new Server().url(serverUrl.trim())));
+        }
+
+        return openAPI;
+    }
+}
