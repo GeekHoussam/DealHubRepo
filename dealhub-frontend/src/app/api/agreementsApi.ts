@@ -39,7 +39,8 @@ export async function publishVersion(versionId: number): Promise<AgreementVersio
 }
 
 /* -----------------------------
-   Lender Inbox (NEW)
+   Lender Inbox (Strategy A aligned)
+   Backend returns payload as JsonNode => object/array/primitive => JsonValue
 ----------------------------- */
 
 export type LenderInboxMessageDto = {
@@ -47,8 +48,8 @@ export type LenderInboxMessageDto = {
   dealName: string;
   lenderId: number;
   recipientEmail: string;
-  createdAt: string; // ISO
-  payload: string;   // raw JSON string
+  createdAt: string;        // ISO
+  payload: JsonValue | null; // ✅ aligned with contracts.ts JsonValue
 };
 
 export async function getLenderInbox(): Promise<LenderInboxMessageDto[]> {
@@ -56,15 +57,13 @@ export async function getLenderInbox(): Promise<LenderInboxMessageDto[]> {
 }
 
 /* -----------------------------
-   Version read/update (NEW / FIXED)
+   Version read/update
 ----------------------------- */
 
-/** Load a specific version by id (used by View page). */
 export async function getVersionById(versionId: number | string): Promise<AgreementVersion> {
   return httpJson("GET", `/agreements/versions/${versionId}`);
 }
 
-/** Update (patch) a draft version JSON by id (used by Edit/Save). */
 export async function updateDraftById(
   versionId: number | string,
   extractedJson: JsonValue
@@ -116,7 +115,7 @@ export async function exportCsv(versionId: number | string, data?: any): Promise
 }
 
 /* -----------------------------
-   Audit (stub for now)
+   Audit (stub)
 ----------------------------- */
 
 export type AuditLogEntry = {
@@ -127,49 +126,20 @@ export type AuditLogEntry = {
 };
 
 export async function getAudit(_agreementId: string | number): Promise<AuditLogEntry[]> {
-  // Backend endpoint not implemented yet -> keep UI working
   return [];
 }
 
 /* -----------------------------
-   Agreement detail helpers
-   (adapt UI expectations to backend reality)
+   Legacy helpers (kept)
 ----------------------------- */
 
-/**
- * IMPORTANT FIX:
- * We do NOT assume endpoints like:
- *   GET /agreements/{agreementId}/versions/draft
- *   GET /agreements/{agreementId}/versions/validated
- * because your backend (AgreementController) doesn't expose them.
- *
- * The UI should work with versionId-based endpoints:
- *   GET   /agreements/versions/{versionId}
- *   PATCH /agreements/versions/{versionId}
- *   POST  /agreements/versions/{versionId}/validate
- *   POST  /agreements/versions/{versionId}/publish
- *
- * So these helpers either:
- *  - use versionId (preferred), or
- *  - throw a clear error if called with agreementId-only.
- */
-
-/**
- * Legacy UI helper name: getDraftVersion(agreementId)
- * Not supported without a backend endpoint to "get latest draft by agreementId".
- * Keep function but fail fast with a clear message.
- */
 export async function getDraftVersion(_agreementId: string | number): Promise<AgreementVersion> {
   throw new Error(
     "getDraftVersion(agreementId) is not supported: backend has no GET /agreements/{agreementId}/versions/draft. " +
-      "Use getVersionById(versionId) instead (load the draft by versionId)."
+      "Use getVersionById(versionId) instead."
   );
 }
 
-/**
- * Legacy UI helper name: getValidatedVersion(agreementId)
- * Not supported without a backend endpoint.
- */
 export async function getValidatedVersion(_agreementId: string | number): Promise<AgreementVersion> {
   throw new Error(
     "getValidatedVersion(agreementId) is not supported: backend has no GET /agreements/{agreementId}/versions/validated. " +
@@ -177,10 +147,6 @@ export async function getValidatedVersion(_agreementId: string | number): Promis
   );
 }
 
-/**
- * UI expects: validateVersion(agreementId, versionId)
- * Backend needs only versionId: POST /agreements/versions/{versionId}/validate
- */
 export async function validateVersion(
   _agreementId: string | number,
   versionId: string | number
@@ -188,10 +154,6 @@ export async function validateVersion(
   return httpJson("POST", `/agreements/versions/${versionId}/validate`);
 }
 
-/**
- * UI expects patchVersion(agreementId, versionId, payload)
- * Backend: PATCH /agreements/versions/{versionId}
- */
 export async function patchVersion(
   _agreementId: string | number,
   versionId: string | number,

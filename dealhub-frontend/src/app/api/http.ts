@@ -1,6 +1,6 @@
 // src/app/api/http.ts
 
-let token: string | null = localStorage.getItem("dealhub_token");
+const TOKEN_KEY = "dealhub_token";
 
 export const API_BASE_URL: string =
   (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:8080";
@@ -18,31 +18,38 @@ export function resolveApiUrl(path: string): string {
 }
 
 export function setAuthToken(t: string | null) {
-  token = t;
-  if (t) localStorage.setItem("dealhub_token", t);
-  else localStorage.removeItem("dealhub_token");
+  const clean = t?.trim() || null;
+
+  if (clean) localStorage.setItem(TOKEN_KEY, clean);
+  else localStorage.removeItem(TOKEN_KEY);
 }
 
-export function getAuthToken() {
-  return token;
+export function getAuthToken(): string | null {
+  const t = localStorage.getItem(TOKEN_KEY);
+  const clean = t?.trim();
+  return clean ? clean : null;
 }
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 async function handleResponse(res: Response) {
   if (res.status === 401) {
+    // Clear token so UI redirects to login cleanly
     setAuthToken(null);
     throw new Error("Unauthorized");
   }
+
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(text || `HTTP ${res.status}`);
   }
+
   return res;
 }
 
 function authHeader(): Record<string, string> {
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const t = getAuthToken(); // ✅ always fresh
+  return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
 /**
@@ -53,13 +60,20 @@ export async function httpJson<T>(
   url: string,
   body?: unknown
 ): Promise<T> {
+  const headers: Record<string, string> = {
+    ...authHeader(),
+  };
+
+  // Only set JSON content-type when sending a body
+  const hasBody = body !== undefined && body !== null && method !== "GET";
+  if (hasBody) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const res = await fetch(resolveApiUrl(url), {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeader(),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers,
+    body: hasBody ? JSON.stringify(body) : undefined,
   });
 
   await handleResponse(res);
