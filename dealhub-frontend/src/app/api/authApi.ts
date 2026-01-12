@@ -10,7 +10,6 @@ export async function login(req: LoginRequest): Promise<LoginResponse> {
   if (typeof t === "string" && t.trim().length) {
     setAuthToken(t);
   } else {
-    // if backend didn't return a token, keep auth empty
     setAuthToken(null);
     throw new Error("Login response missing token");
   }

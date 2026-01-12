@@ -151,17 +151,14 @@ export default function DashboardPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   useEffect(() => {
     if (tab !== "historical") return;
     const t = setTimeout(() => load(), 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
-  // Enrich rows using REAL endpoint: GET /agreements/versions/{versionId}
   useEffect(() => {
     (async () => {
       if (!rows || rows.length === 0) return;
@@ -186,7 +183,6 @@ export default function DashboardPage() {
             (v as any)?.extractedJson ?? (v as any)?.extracted ?? null;
           if (extracted) updates[versionId] = extracted;
         } catch {
-          // ignore per-row failures
         }
       }
 
@@ -194,7 +190,6 @@ export default function DashboardPage() {
         setExtractedCache((prev) => ({ ...prev, ...updates }));
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, extractedCache]);
 
   const enrichedRows = useMemo(() => {
@@ -217,7 +212,6 @@ export default function DashboardPage() {
       );
     }
 
-    // NOTE: this filter is applied only in "recent" as in your code
     if (q.trim() && tab === "recent") {
       const qq = q.trim().toLowerCase();
       r = r.filter((x: any) => {
@@ -289,7 +283,6 @@ export default function DashboardPage() {
     }
   };
 
-  // --- LENDER actions (mock) ---
   function openChatWithAgent(row: any) {
     const dealName = row?.agreementName ?? "Facility Agreement";
     setChatThread(buildMockChatThread(dealName, lenderEmail));
@@ -510,7 +503,7 @@ export default function DashboardPage() {
                             </>
                           )}
 
-                        {/* ✅ LENDER-only mock actions */}
+                        {/*  LENDER-only mock actions */}
                         {isLender && (
                           <>
                             <button

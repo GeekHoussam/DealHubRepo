@@ -130,10 +130,6 @@ export async function updateDraftById(
   return httpJson("PATCH", `/agreements/versions/${versionId}`, extractedJson);
 }
 
-/**
- * ✅ Keep existing exports for raw DTO usage
- * DashboardPage expects AgreementRowDto[] so it keeps working.
- */
 export const listRecentAgreements = listRecent;
 export const listHistoricalAgreements = listHistorical;
 

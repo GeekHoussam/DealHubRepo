@@ -9,12 +9,15 @@ export function TopBar() {
 
   if (!user) return null;
 
-  // Backend provides email, not fullName
   const initials = (() => {
     const email = user.email || "dealhub";
-    const namePart = email.split("@")[0]; // e.g. agent.dealhub
+    const namePart = email.split("@")[0];
     const parts = namePart.split(/[._-]+/).filter(Boolean);
-    const letters = parts.map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+    const letters = parts
+      .map((p) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
     return letters || "DH";
   })();
 
@@ -38,13 +41,15 @@ export function TopBar() {
           <Link
             to="/dashboard"
             className={`px-3 py-1 rounded-lg ${
-              location.pathname.startsWith("/dashboard") ? activeClass : idleClass
+              location.pathname.startsWith("/dashboard")
+                ? activeClass
+                : idleClass
             }`}
           >
             Dashboard
           </Link>
 
-          {/* ✅ Lender Inbox (only LENDER) */}
+          {/* Lender Inbox (only LENDER) */}
           {String(user.role).toUpperCase() === "LENDER" && (
             <Link
               to="/lender/inbox"
@@ -63,14 +68,16 @@ export function TopBar() {
             <Link
               to="/extract"
               className={`px-3 py-1 rounded-lg ${
-                location.pathname.startsWith("/extract") ? activeClass : idleClass
+                location.pathname.startsWith("/extract")
+                  ? activeClass
+                  : idleClass
               }`}
             >
               Extract
             </Link>
           )}
 
-          {/* ✅ Admin menu (only ADMIN) */}
+          {/*  Admin menu (only ADMIN) */}
           {String(user.role).toUpperCase() === "ADMIN" && (
             <Link
               to="/admin/users"

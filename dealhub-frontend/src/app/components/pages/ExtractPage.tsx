@@ -32,14 +32,14 @@ function buildValidationIssues(resultJson: any): ValidationIssue[] {
   return issues;
 }
 
-// ----------- JSON -> friendly text (for Raw Text Preview) -----------
 function isValueObj(x: any) {
   return x && typeof x === "object" && "value" in x && "citation" in x;
 }
 
 function friendlyValue(x: any): string {
   if (x == null) return "—";
-  if (typeof x === "string" || typeof x === "number" || typeof x === "boolean") return String(x);
+  if (typeof x === "string" || typeof x === "number" || typeof x === "boolean")
+    return String(x);
   if (isValueObj(x)) return x.value == null ? "—" : String(x.value);
   if (Array.isArray(x)) return `[${x.length} items]`;
   return "[object]";
@@ -51,10 +51,11 @@ function jsonToFriendlyText(obj: any): string {
   const walk = (node: any, path: string) => {
     if (node == null) return;
 
-    // If it's the standard extracted field object { value, citation, evidence }
     if (isValueObj(node)) {
       const v = node.value == null ? "—" : String(node.value);
-      const cite = node.citation ? `  (citation: ${String(node.citation)})` : "";
+      const cite = node.citation
+        ? `  (citation: ${String(node.citation)})`
+        : "";
       const ev = node.evidence ? `  (evidence: ${String(node.evidence)})` : "";
       lines.push(`${path}: ${v}${cite}${ev}`);
       return;
@@ -70,11 +71,9 @@ function jsonToFriendlyText(obj: any): string {
       return;
     }
 
-    // Regular object
     for (const [k, v] of Object.entries(node)) {
       const next = path ? `${path}.${k}` : k;
       if (v == null) continue;
-      // keep the output readable: skip huge blobs if needed
       walk(v, next);
     }
   };
@@ -91,7 +90,9 @@ export function ExtractPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // UI status
-  const [status, setStatus] = useState<"ready" | "extracting" | "extracted">("ready");
+  const [status, setStatus] = useState<"ready" | "extracting" | "extracted">(
+    "ready"
+  );
 
   // Borrowers
   const [borrowers, setBorrowers] = useState<BorrowerDto[]>([]);
@@ -103,7 +104,6 @@ export function ExtractPage() {
     return borrowers.find((b) => b.id === borrowerId)?.name ?? "";
   }, [borrowerId, borrowers]);
 
-  // IDs that matter (hidden from UI)
   const [agreementId, setAgreementId] = useState<number | null>(null);
   const [documentId, setDocumentId] = useState<number | null>(null);
   const [versionId, setVersionId] = useState<number | null>(null);
@@ -115,10 +115,15 @@ export function ExtractPage() {
     agent: string;
   } | null>(null);
 
-  const [extractedData, setExtractedData] = useState<Record<string, any> | null>(null);
+  const [extractedData, setExtractedData] = useState<Record<
+    string,
+    any
+  > | null>(null);
   const [editableJsonText, setEditableJsonText] = useState<string>("");
 
-  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
+  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>(
+    []
+  );
   const [rawText, setRawText] = useState("");
   const [jobKey, setJobKey] = useState<string | null>(null);
 
@@ -149,8 +154,6 @@ export function ExtractPage() {
     setValidationIssues([]);
     setRawText("");
     setJobKey(null);
-
-    // keep borrowers selection, but reset IDs
     setAgreementId(null);
     setDocumentId(null);
     setVersionId(null);
@@ -171,26 +174,25 @@ export function ExtractPage() {
     }
   };
 
-  // Parse JSON editor
   const parseEditableJson = (): any => {
     const t = (editableJsonText || "").trim();
     if (!t) return {};
     try {
       return JSON.parse(t);
     } catch {
-      throw new Error("Invalid JSON in editor. Please fix it before validating/publishing.");
+      throw new Error(
+        "Invalid JSON in editor. Please fix it before validating/publishing."
+      );
     }
   };
 
   const handleExtract = async () => {
-    // Preconditions
     if (!borrowerId) return toast.error("Please select a borrower");
     if (!selectedFile) return toast.error("Please upload a PDF first");
 
     const borrowerName = selectedBorrowerName;
     if (!borrowerName) return toast.error("Invalid borrower selection");
 
-    // agent from logged-in user
     const agentName =
       (user as any)?.email ??
       (user as any)?.name ??
@@ -201,7 +203,6 @@ export function ExtractPage() {
     resetResults();
 
     try {
-      // (1) Create agreement
       const agreement = await createAgreement({
         name: "Demo Agreement",
         borrower: borrowerName,
@@ -209,16 +210,20 @@ export function ExtractPage() {
       } as any);
 
       const newAgreementId = Number((agreement as any)?.id);
-      if (!newAgreementId) throw new Error("Agreement creation failed: missing agreement id");
+      if (!newAgreementId)
+        throw new Error("Agreement creation failed: missing agreement id");
       setAgreementId(newAgreementId);
 
-      // (2) Upload document
-      const uploaded = await uploadDocument(selectedFile, newAgreementId, "FACILITY_AGREEMENT");
+      const uploaded = await uploadDocument(
+        selectedFile,
+        newAgreementId,
+        "FACILITY_AGREEMENT"
+      );
       const newDocumentId = Number((uploaded as any)?.id);
-      if (!newDocumentId) throw new Error("Document upload failed: missing document id");
+      if (!newDocumentId)
+        throw new Error("Document upload failed: missing document id");
       setDocumentId(newDocumentId);
 
-      // (3) Start extraction
       const started = await startExtraction({
         documentId: newDocumentId,
         agreementId: newAgreementId,
@@ -226,7 +231,9 @@ export function ExtractPage() {
       });
 
       setJobKey(started.jobKey);
-      toast.message("Extraction started", { description: `Job: ${started.jobKey}` });
+      toast.message("Extraction started", {
+        description: `Job: ${started.jobKey}`,
+      });
 
       const finalJob = await pollExtraction(started.jobKey, {
         intervalMs: 1500,
@@ -234,10 +241,11 @@ export function ExtractPage() {
       });
 
       if (String(finalJob.status ?? "").toUpperCase() === "FAILED") {
-        throw new Error(finalJob.errorMessage || finalJob.error || "Extraction failed");
+        throw new Error(
+          finalJob.errorMessage || finalJob.error || "Extraction failed"
+        );
       }
 
-      // (4) Normalize extraction result
       const result =
         (finalJob.resultJson as any) ??
         (finalJob.output as any) ??
@@ -245,13 +253,12 @@ export function ExtractPage() {
         (finalJob.extracted as any) ??
         {};
 
-      // (5) Create draft version in agreement-service (Swagger step)
       const draft = await createDraft(newAgreementId, result as any);
       const newVersionId = Number((draft as any)?.id);
-      if (!newVersionId) throw new Error("Draft creation failed: missing version id");
+      if (!newVersionId)
+        throw new Error("Draft creation failed: missing version id");
       setVersionId(newVersionId);
 
-      // Some backends return extractedJson wrapper; support both
       const draftJson =
         (draft as any)?.extractedJson ??
         (draft as any)?.resultJson ??
@@ -261,13 +268,10 @@ export function ExtractPage() {
       setExtractedData(draftJson);
       setEditableJsonText(JSON.stringify(draftJson, null, 2));
 
-      // Validation issues are read from JSON (your extractor puts validationAndGaps inside JSON)
       setValidationIssues(buildValidationIssues(draftJson));
 
-      // Raw Text Preview: user-friendly text from JSON
       setRawText(jsonToFriendlyText(draftJson));
 
-      // Deal summary
       const borrower =
         friendlyValue(draftJson?.parties?.borrower?.legalName) ||
         friendlyValue(draftJson?.parties?.borrowerName) ||
@@ -299,7 +303,6 @@ export function ExtractPage() {
     }
   };
 
-  // Save edits into backend (best effort)
   const handleSaveEdits = async () => {
     if (!agreementId || !versionId) {
       toast.error("Missing agreement/version. Re-run extraction.");
@@ -309,7 +312,6 @@ export function ExtractPage() {
     try {
       const edited = parseEditableJson();
 
-      // Preferred: PATCH version if your backend supports it
       try {
         const updated = await patchVersion(agreementId, versionId, edited);
         const updatedJson = (updated as any)?.extractedJson ?? edited;
@@ -321,7 +323,6 @@ export function ExtractPage() {
         toast.success("Draft updated");
         return;
       } catch (patchErr) {
-        // Fallback: create a NEW draft from edited JSON
         const newDraft = await createDraft(agreementId, edited);
         const newVid = Number((newDraft as any)?.id);
         if (!newVid) throw patchErr;
@@ -346,11 +347,8 @@ export function ExtractPage() {
       return;
     }
 
-    // optional guard: if validation section shows missing items, you may want to block validate
-    // but you asked to allow manual fixes -> so we validate after edits.
     setValidateBusy(true);
     try {
-      // Validate uses versionId
       const validated = await validateVersionById(versionId);
 
       const validatedJson =
@@ -367,7 +365,9 @@ export function ExtractPage() {
       toast.success("Validated");
     } catch (e: any) {
       console.error(e);
-      toast.error("Validation failed", { description: e?.message || String(e) });
+      toast.error("Validation failed", {
+        description: e?.message || String(e),
+      });
     } finally {
       setValidateBusy(false);
     }
@@ -421,7 +421,6 @@ export function ExtractPage() {
         extractedData={extractedData}
         validationIssues={validationIssues}
         rawText={rawText}
-        // new props for validation workflow
         agreementId={agreementId}
         documentId={documentId}
         versionId={versionId}

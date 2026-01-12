@@ -3,7 +3,7 @@ import { UploadBox } from "./UploadBox";
 import { StatusBadge } from "./StatusBadge";
 import { KeyValueItem } from "./KeyValueItem";
 import { Button } from "./Button";
-import type { BorrowerDto } from "../api/borrowersApi"; // adjust if your path differs
+import type { BorrowerDto } from "../api/borrowersApi";
 
 interface UploadCardProps {
   fileName: string | null;
@@ -38,9 +38,12 @@ export function UploadCard({
   return (
     <div className="w-[380px] bg-white rounded-xl shadow-sm p-5 flex flex-col gap-4">
       <div>
-        <h2 className="text-base mb-1.5 text-[#0B1F3B]">Upload Facility Agreement</h2>
+        <h2 className="text-base mb-1.5 text-[#0B1F3B]">
+          Upload Facility Agreement
+        </h2>
         <p className="text-[13px] text-gray-500">
-          Upload a PDF for reference. Agreement/document IDs are handled automatically (Swagger flow).
+          Upload a PDF for reference. Agreement/document IDs are handled
+          automatically (Swagger flow).
         </p>
       </div>
 
@@ -70,7 +73,10 @@ export function UploadCard({
         </select>
       </label>
 
-      <UploadBox onFileSelect={onFileSelect} disabled={status === "extracting"} />
+      <UploadBox
+        onFileSelect={onFileSelect}
+        disabled={status === "extracting"}
+      />
 
       {fileName && (
         <div className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
@@ -95,7 +101,9 @@ export function UploadCard({
             <KeyValueItem label="Agent" value={dealSummary.agent} />
           </div>
         ) : (
-          <p className="text-sm text-gray-400 py-4 text-center">No data available</p>
+          <p className="text-sm text-gray-400 py-4 text-center">
+            No data available
+          </p>
         )}
       </div>
 

@@ -1,4 +1,3 @@
-// src/app/mocks/mockLenderInbox.ts
 import { structuredDealDataset } from "./structuredDealDataset";
 
 export function buildMockLenderInboxRows() {

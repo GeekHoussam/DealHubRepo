@@ -1,4 +1,3 @@
-// src/app/mocks/mockChat.ts
 export type ChatMessage = {
   id: string;
   from: "LENDER" | "AGENT";
@@ -6,9 +5,13 @@ export type ChatMessage = {
   ts: string; // ISO
 };
 
-export function buildMockChatThread(dealName: string, lenderEmail: string): ChatMessage[] {
+export function buildMockChatThread(
+  dealName: string,
+  lenderEmail: string
+): ChatMessage[] {
   const now = new Date();
-  const t = (minsAgo: number) => new Date(now.getTime() - minsAgo * 60_000).toISOString();
+  const t = (minsAgo: number) =>
+    new Date(now.getTime() - minsAgo * 60_000).toISOString();
 
   return [
     {

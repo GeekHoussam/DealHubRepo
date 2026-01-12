@@ -34,18 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const token = getAuthToken();
 
-      // ✅ No token => not authenticated (stop here)
       if (!token) {
         setUser(null);
         setLoading(false);
         return;
       }
 
-      // ✅ Token exists => load profile
       const profile = (await me()) as unknown as UserProfile;
       setUser(profile);
     } catch (e) {
-      // ✅ Token invalid/expired/401 => clear session
       setUser(null);
       setAuthToken(null);
     } finally {
@@ -53,11 +50,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // ✅ Recommended: centralize login here so you ALWAYS set user after saving token
   const login = async (req: LoginRequest) => {
     setLoading(true);
     try {
-      await apiLogin(req); // this stores dealhub_token via setAuthToken inside authApi.ts
+      await apiLogin(req);
       await refreshUser({ silent: true });
     } finally {
       setLoading(false);
@@ -66,17 +62,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await apiLogout(); // clears dealhub_token (via setAuthToken(null))
+      await apiLogout();
     } finally {
       setUser(null);
       setLoading(false);
     }
   };
 
-  // ✅ Restore session on app start
   useEffect(() => {
     refreshUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo<AuthContextValue>(() => {

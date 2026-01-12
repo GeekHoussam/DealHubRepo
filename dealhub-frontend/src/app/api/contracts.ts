@@ -1,5 +1,5 @@
 /* -----------------------------
-   Shared JSON type (Draft / Extraction / Golden Source)
+   Shared JSON type 
 ----------------------------- */
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue =
@@ -132,5 +132,3 @@ export interface CreateAgreementRequest {
   borrower: string;
   agent: string;
 }
-
-

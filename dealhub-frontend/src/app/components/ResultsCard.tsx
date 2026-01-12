@@ -5,10 +5,9 @@ type ValidationIssue = { field: string; message: string };
 
 type Props = {
   extractedData: Record<string, any> | null;
-  validationIssues: ValidationIssue[]; // keep for now (not displayed)
+  validationIssues: ValidationIssue[];
   rawText: string;
 
-  // workflow state
   agreementId: number | null;
   documentId: number | null;
   versionId: number | null;
@@ -38,7 +37,6 @@ export function ResultsCard({
   validateBusy,
   publishBusy,
 }: Props) {
-  // ✅ only one view now
   const [rawOpen, setRawOpen] = useState(false);
 
   const hasData = !!extractedData;
@@ -62,8 +60,8 @@ export function ResultsCard({
 
           {(agreementId || documentId || versionId) && (
             <p className="text-[12px] text-gray-500 mt-1">
-              Agreement: {agreementId ?? "—"} · Document: {documentId ?? "—"} · Version:{" "}
-              {versionId ?? "—"}
+              Agreement: {agreementId ?? "—"} · Document: {documentId ?? "—"} ·
+              Version: {versionId ?? "—"}
             </p>
           )}
         </div>
@@ -92,10 +90,15 @@ export function ResultsCard({
           <Button
             variant="secondary"
             onClick={() => {
-              const obj = extractedData && typeof extractedData === "object" ? extractedData : {};
+              const obj =
+                extractedData && typeof extractedData === "object"
+                  ? extractedData
+                  : {};
               const keys = Object.keys(obj);
               const header = keys.join(",");
-              const row = keys.map((k) => JSON.stringify((obj as any)[k] ?? "")).join(",");
+              const row = keys
+                .map((k) => JSON.stringify((obj as any)[k] ?? ""))
+                .join(",");
               const csv = keys.length ? `${header}\n${row}\n` : `key,value\n\n`;
 
               const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -115,7 +118,6 @@ export function ResultsCard({
         </div>
       </div>
 
-      {/* ✅ Keep only "Extracted JSON" header, remove Validation tab */}
       <div className="mt-4 border-b border-gray-200 flex gap-6">
         <div className="pb-2 text-sm text-[#0B1F3B] border-b-2 border-[#0B1F3B]">
           Extracted JSON
@@ -126,7 +128,8 @@ export function ResultsCard({
       <div className="mt-4">
         {!hasData ? (
           <div className="h-[380px] bg-gray-50 rounded-lg flex items-center justify-center text-sm text-gray-400">
-            No extraction results yet. Upload and extract a PDF to see data here.
+            No extraction results yet. Upload and extract a PDF to see data
+            here.
           </div>
         ) : (
           <>
@@ -136,7 +139,11 @@ export function ResultsCard({
               </p>
 
               <div className="flex gap-2">
-                <Button variant="secondary" onClick={onSaveEdits} disabled={!canValidate}>
+                <Button
+                  variant="secondary"
+                  onClick={onSaveEdits}
+                  disabled={!canValidate}
+                >
                   Save Draft
                 </Button>
                 <Button
@@ -163,7 +170,9 @@ export function ResultsCard({
             />
 
             <details className="mt-3">
-              <summary className="cursor-pointer text-sm text-gray-600">Show read-only JSON</summary>
+              <summary className="cursor-pointer text-sm text-gray-600">
+                Show read-only JSON
+              </summary>
               <pre className="mt-2 bg-gray-50 rounded-lg p-3 overflow-auto text-[12px] leading-5">
                 {prettyJson}
               </pre>
@@ -172,13 +181,16 @@ export function ResultsCard({
         )}
       </div>
 
-      {/* Raw Text Preview */}
       <div className="mt-6 border-t border-gray-200 pt-4">
         <button
           className="text-sm text-[#0B1F3B] flex items-center gap-2"
           onClick={() => setRawOpen((v) => !v)}
         >
-          <span className={`transition-transform ${rawOpen ? "rotate-180" : ""}`}>⌃</span>
+          <span
+            className={`transition-transform ${rawOpen ? "rotate-180" : ""}`}
+          >
+            ⌃
+          </span>
           {rawOpen ? "Hide Raw Text Preview" : "Show Raw Text Preview"}
         </button>
 

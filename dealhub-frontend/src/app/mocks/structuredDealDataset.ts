@@ -1,11 +1,13 @@
-// src/app/mocks/structuredDealDataset.ts
-
 export const structuredDealDataset = [
   {
     dealName: "Facility Agreement",
     lender: "BNP Paribas",
     borrower: { legalName: "CARLSBERG BREWERIES A/S", otherLegalDetails: null },
-    roles: { agent: "BNP Paribas", arrangers: null, lenderRole: "Original Lender" },
+    roles: {
+      agent: "BNP Paribas",
+      arrangers: null,
+      lenderRole: "Original Lender",
+    },
     participation: {
       commitmentAmount: "£1,433,333,333.34",
       commitmentCurrency: "GBP",
@@ -40,7 +42,11 @@ export const structuredDealDataset = [
     dealName: "Facility Agreement",
     lender: "Danske Bank A/S",
     borrower: { legalName: "CARLSBERG BREWERIES A/S", otherLegalDetails: null },
-    roles: { agent: "BNP Paribas", arrangers: null, lenderRole: "Original Lender" },
+    roles: {
+      agent: "BNP Paribas",
+      arrangers: null,
+      lenderRole: "Original Lender",
+    },
     participation: {
       commitmentAmount: "£1,433,333,333.33",
       commitmentCurrency: "GBP",
@@ -75,7 +81,11 @@ export const structuredDealDataset = [
     dealName: "Facility Agreement",
     lender: "Skandinaviska Enskilda Banken AB (publ)",
     borrower: { legalName: "CARLSBERG BREWERIES A/S", otherLegalDetails: null },
-    roles: { agent: "BNP Paribas", arrangers: null, lenderRole: "Original Lender" },
+    roles: {
+      agent: "BNP Paribas",
+      arrangers: null,
+      lenderRole: "Original Lender",
+    },
     participation: {
       commitmentAmount: "£1,433,333,333.33",
       commitmentCurrency: "GBP",

@@ -49,7 +49,7 @@ function AppRoutes() {
           }
         />
 
-        {/* ✅ NEW: Lender Inbox */}
+        {/*Lender Inbox */}
         <Route
           path="/lender/inbox"
           element={
@@ -59,7 +59,7 @@ function AppRoutes() {
           }
         />
 
-        {/* ✅ NEW: version-based route (Dashboard View/Edit uses this) */}
+        {/*version-based route */}
         <Route
           path="/agreements/versions/:versionId"
           element={
@@ -69,7 +69,6 @@ function AppRoutes() {
           }
         />
 
-        {/* ✅ Keep old agreement-based route for backward compatibility */}
         <Route
           path="/agreements/:id"
           element={
@@ -79,7 +78,7 @@ function AppRoutes() {
           }
         />
 
-        {/* ✅ Admin users (MUST be before wildcard) */}
+        {/* Admin users */}
         <Route
           path="/admin/users"
           element={

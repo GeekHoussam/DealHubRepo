@@ -23,7 +23,6 @@ export interface AgreementSummary {
   myCommitment?: number;
 }
 
-/** ✅ Extraction field shape */
 export type ExtractionField<T> = {
   value: T;
   citation?: string | null;
