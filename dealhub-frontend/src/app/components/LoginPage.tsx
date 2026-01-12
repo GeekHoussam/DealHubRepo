@@ -31,7 +31,7 @@ export function LoginPage() {
 
       navigate("/dashboard");
     } catch (err: any) {
-      setErrorMsg(err?.message ?? "Login failed");
+      setErrorMsg(err?.message || "Email or password is incorrect.");
     } finally {
       setSubmitting(false);
     }
