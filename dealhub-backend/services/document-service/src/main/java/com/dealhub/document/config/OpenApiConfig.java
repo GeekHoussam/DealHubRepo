@@ -32,7 +32,6 @@ public class OpenApiConfig {
                                         .scheme("bearer")
                                         .bearerFormat("JWT")));
 
-        // ✅ Make Swagger call the Gateway instead of calling this service directly
         if (serverUrl != null && !serverUrl.isBlank()) {
             openAPI.setServers(List.of(new Server().url(serverUrl.trim())));
         }

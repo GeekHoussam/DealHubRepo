@@ -14,17 +14,6 @@ public class LlmFacilityAgreementExtractor {
 
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
-
-    /**
-     * Hardened for gpt-4o-mini:
-     * - Imperative instructions (no "may/if applicable")
-     * - Forces table extraction
-     * - Forces placeholder override when explicit appears later
-     * - Forces facility currency/type when Total Commitments present
-     * - Forces calculated sharePercentage evidence to include both operands
-     *
-     * NOTE: Keep prompts free of raw percent signs to avoid String.format issues.
-     */
     private static final String SYSTEM_RULES_GPT4O_MINI = """
 SYSTEM ROLE OVERRIDE:
 You are a deterministic legal data extraction engine.
@@ -63,7 +52,6 @@ SCHEMA:
 - No extra keys, no renamed keys.
 """;
 
-    // PASS 1 prompt template (gpt-4o-mini hardened)
     private static final String PASS1_TEMPLATE = """
 You are extracting data for a Facility Agreement.
 
@@ -222,10 +210,6 @@ OUTPUT:
         return mergedObj;
     }
 
-    /**
-     * Extract Total Commitments from the entire document (all chunks).
-     * Returns either {} or {"totalCommitments": {value,citation,evidence}}
-     */
     private ObjectNode extractTotalCommitmentsFromAllChunks(List<String> chunks) throws Exception {
         StringBuilder all = new StringBuilder();
         for (int i = 0; i < chunks.size(); i++) {

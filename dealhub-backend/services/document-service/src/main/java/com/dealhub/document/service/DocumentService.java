@@ -52,16 +52,10 @@ public class DocumentService {
         DocumentEntity doc = new DocumentEntity();
         doc.setAgreementId(agreementId);
         doc.setDocumentType(documentType);
-
-        // ✅ Must not be null (based on your insert SQL)
         doc.setOriginalFilename(file.getOriginalFilename());
         doc.setStoredFilename(stored.storedFilename());
         doc.setSha256(stored.sha256());
-
-        // ✅ FIX: size_bytes cannot be null
-        doc.setSizeBytes(file.getSize()); // if setter is Long, change to: Long.valueOf(file.getSize())
-
-        // ✅ Recommended: ensure not null
+        doc.setSizeBytes(file.getSize());
         String contentType = file.getContentType();
         doc.setContentType(contentType != null ? contentType : "application/octet-stream");
 

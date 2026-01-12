@@ -19,9 +19,8 @@ public class TextChunker {
         while (i < t.length()) {
             int end = Math.min(i + maxChars, t.length());
 
-            // try to break on paragraph boundary
             int lastBreak = t.lastIndexOf("\n\n", end);
-            if (lastBreak > i + 2000) { // avoid tiny chunks
+            if (lastBreak > i + 2000) {
                 end = lastBreak;
             }
 

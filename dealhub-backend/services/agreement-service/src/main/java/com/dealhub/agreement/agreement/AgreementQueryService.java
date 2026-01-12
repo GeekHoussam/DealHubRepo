@@ -3,7 +3,6 @@ package com.dealhub.agreement.agreement;
 import com.dealhub.agreement.api.dto.AgreementRowDto;
 import com.dealhub.agreement.security.AccessPolicy;
 import com.dealhub.agreement.security.AuthenticatedUser;
-import com.dealhub.agreement.version.AgreementStatus;
 import com.dealhub.agreement.version.AgreementVersion;
 import com.dealhub.agreement.version.AgreementVersionRepository;
 import org.springframework.stereotype.Service;
@@ -41,7 +40,6 @@ public class AgreementQueryService {
 
     private List<AgreementRowDto> list(AuthenticatedUser user, Instant since, String query) {
 
-        // 1) Fetch agreements (scoped by role)
         List<Agreement> agreements;
 
         if (policy.isAdminOrAgent(user)) {
@@ -53,7 +51,6 @@ public class AgreementQueryService {
 
         if (agreements.isEmpty()) return List.of();
 
-        // 2) Optional search filter (still in-memory; can move to DB later)
         if (query != null && !query.isBlank()) {
             String qq = query.toLowerCase();
             agreements = agreements.stream()
@@ -89,7 +86,6 @@ public class AgreementQueryService {
             latestValidatedByAgreementId.put(v.getAgreementId(), v);
         }
 
-        // 4) Build rows + apply lender visibility rule + since filter
         List<AgreementRowDto> rows = new ArrayList<>();
 
         for (Agreement a : agreements) {
@@ -99,12 +95,11 @@ public class AgreementQueryService {
             AgreementVersion latestDraft = latestDraftByAgreementId.get(a.getId());
             AgreementVersion latestValidatedVersion = latestValidatedByAgreementId.get(a.getId());
 
-            // LENDER rule: only VALIDATED visible
             if (policy.isLender(user)) {
                 if (latestValidatedVersion == null) continue;
                 latest = latestValidatedVersion; // show validated snapshot
             } else {
-                // For Admin/Agent, if there is a draft, show DRAFT status as the row status
+
                 if (latestDraft != null) {
                     latest = latestDraft;
                 }
@@ -126,8 +121,6 @@ public class AgreementQueryService {
                     latest.getStatus(),
                     lastUpdated,
                     latest.getValidatedAt(),
-
-                    // ✅ Version IDs for dashboard actions
                     latestByAgreementId.get(a.getId()) != null ? latestByAgreementId.get(a.getId()).getId() : null,
                     latestDraft != null ? latestDraft.getId() : null,
                     latestValidatedVersion != null ? latestValidatedVersion.getId() : null

@@ -11,7 +11,7 @@ public record ExtractionResponse(
         Long agreementId,
         ExtractionProfile extractionProfile,
         ExtractionStatus status,
-        JsonNode resultJson,   // ✅
+        JsonNode resultJson,
         String errorMessage,
         Instant createdAt,
         Instant updatedAt

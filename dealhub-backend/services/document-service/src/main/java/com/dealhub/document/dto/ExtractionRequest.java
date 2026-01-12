@@ -5,5 +5,5 @@ import jakarta.validation.constraints.NotNull;
 public record ExtractionRequest(
         Long agreementId,
         @NotNull(message = "Extraction profile cannot be null")
-        String extractionProfile // e.g. "FACILITY_AGREEMENT"
+        String extractionProfile
 ) {}

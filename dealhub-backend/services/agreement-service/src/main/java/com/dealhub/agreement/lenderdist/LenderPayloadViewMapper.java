@@ -3,13 +3,11 @@ package com.dealhub.agreement.lenderdist;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.*;
-
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Iterator;
 import java.util.Locale;
 
 @Component
@@ -22,87 +20,58 @@ public class LenderPayloadViewMapper {
     }
 
     /**
-     * Build lender-facing payload from full extracted payload.
-     * Input = full extraction JSON (your big object)
-     * Output = small lender view payload
+     * Input: full extraction JSON
+     * Output: lender-facing expected payload
      */
     public ObjectNode buildLenderView(JsonNode fullPayload, String lenderEmail, String inboxDealName) {
         ObjectNode out = mapper.createObjectNode();
 
-        // -------------------------
-        // Root fields
-        // -------------------------
+        // dealName
         out.put("dealName", StringUtils.hasText(inboxDealName) ? inboxDealName : "Facility Agreement");
 
         JsonNode parties = fullPayload.path("parties");
         String borrowerName = textOrNull(parties, "borrowerName");
         String agentName = textOrNull(parties, "administrativeAgentName");
 
-        // -------------------------
-        // Find lender entry
-        // -------------------------
+        // lender entry matched from parties.lenders[]
         JsonNode lenderEntry = findLenderEntry(parties.path("lenders"), lenderEmail);
-
         String lenderName = lenderEntry != null ? textOrNull(lenderEntry, "name") : null;
-        if (!StringUtils.hasText(lenderName)) {
-            lenderName = deriveDisplayNameFromEmail(lenderEmail);
-        }
+        if (!StringUtils.hasText(lenderName)) lenderName = deriveDisplayNameFromEmail(lenderEmail);
         out.put("lender", lenderName);
 
-        // -------------------------
         // borrower
-        // -------------------------
         ObjectNode borrower = mapper.createObjectNode();
         borrower.put("legalName", borrowerName);
         borrower.set("otherLegalDetails", NullNode.instance);
         out.set("borrower", borrower);
 
-        // -------------------------
         // roles
-        // -------------------------
         ObjectNode roles = mapper.createObjectNode();
         roles.put("agent", agentName);
         roles.set("arrangers", NullNode.instance);
         roles.put("lenderRole", "Original Lender");
         out.set("roles", roles);
 
-        // -------------------------
         // participation
-        // -------------------------
         ObjectNode participation = mapper.createObjectNode();
-
         String commitmentAmount = null;
         String sharePct = null;
 
         if (lenderEntry != null) {
             commitmentAmount = lenderEntry.path("shareAmount").path("value").asText(null);
-
-            String rawPct = lenderEntry.path("sharePercentage").path("value").asText(null);
-            sharePct = normalizeSharePercentage(rawPct);
+            sharePct = normalizeSharePercentage(lenderEntry.path("sharePercentage").path("value").asText(null));
         }
 
         participation.put("commitmentAmount", commitmentAmount);
-
-        // currency: prefer facilities[0].currency or infer from £
-        String commitmentCurrency = inferCurrencyFromAmount(commitmentAmount);
-        participation.put("commitmentCurrency", commitmentCurrency);
-
+        participation.put("commitmentCurrency", normalizeCurrency(inferCurrencyFromAmount(commitmentAmount)));
         participation.put("sharePercentage", sharePct);
         out.set("participation", participation);
 
-        // -------------------------
-        // facility (total size)
-        // -------------------------
+        // facility
         ObjectNode facility = mapper.createObjectNode();
-
         String totalSize = extractTotalSize(fullPayload, parties);
         facility.put("totalSize", totalSize);
-
-        String facilityCurrency = textOrNullFromFacilities(fullPayload, "currency");
-        if (!StringUtils.hasText(facilityCurrency)) {
-            facilityCurrency = inferCurrencyFromAmount(totalSize);
-        }
-        facility.put("currency", normalizeCurrency(facilityCurrency));
+        facility.put("currency", normalizeCurrency(inferCurrencyFromAmount(totalSize)));
 
         String facilityType = textOrNullFromFacilities(fullPayload, "facilityType");
         facility.put("type", normalizeFacilityType(facilityType));
@@ -110,13 +79,13 @@ public class LenderPayloadViewMapper {
 
         out.set("purpose", NullNode.instance);
 
-        // -------------------------
-        // dates (best-effort)
-        // -------------------------
+        // dates
         ObjectNode dates = mapper.createObjectNode();
         JsonNode keyDates = fullPayload.path("keyDates");
+
         String signingDate = keyDates.path("agreementDate").path("value").asText(null);
         dates.put("signingDate", normalizeDateOrNull(signingDate));
+
         dates.set("closingDate", NullNode.instance);
         dates.set("terminationDateInitial", NullNode.instance);
         dates.set("terminationDateExtended", NullNode.instance);
@@ -124,23 +93,22 @@ public class LenderPayloadViewMapper {
 
         out.set("availabilityAndUtilization", NullNode.instance);
 
-        // -------------------------
         // pricing.marginGrid
-        // expects: [{period, margin}]
-        // -------------------------
         ObjectNode pricing = mapper.createObjectNode();
         ArrayNode marginGrid = mapper.createArrayNode();
 
-        JsonNode pricingNode = fullPayload.path("pricing");
-        JsonNode marginArray = pricingNode.path("margin");
-
+        JsonNode marginArray = fullPayload.path("pricing").path("margin");
         if (marginArray.isArray()) {
             for (JsonNode m : marginArray) {
                 String period = m.path("period").asText(null);
-                String margin = m.path("sterlingMargin").asText(null);
 
-                // your extractor may use different keys; add fallback:
-                if (!StringUtils.hasText(margin)) margin = m.path("margin").asText(null);
+                // your extraction sometimes has sterlingMargin under nested objects; keep fallback
+                String margin =
+                        m.path("sterlingMargin").asText(null);
+
+                if (!StringUtils.hasText(margin)) {
+                    margin = m.path("margin").asText(null);
+                }
 
                 if (StringUtils.hasText(period) || StringUtils.hasText(margin)) {
                     ObjectNode row = mapper.createObjectNode();
@@ -155,9 +123,7 @@ public class LenderPayloadViewMapper {
         pricing.set("ratingAdjustmentRules", NullNode.instance);
         out.set("pricing", pricing);
 
-        // -------------------------
-        // fees + dayCountConvention
-        // -------------------------
+        // fees
         ObjectNode fees = mapper.createObjectNode();
         fees.set("upfrontFee", NullNode.instance);
         fees.set("agencyFee", NullNode.instance);
@@ -169,9 +135,7 @@ public class LenderPayloadViewMapper {
         return out;
     }
 
-    // =========================
-    // Helpers
-    // =========================
+    // ---------------- HELPERS ----------------
 
     private JsonNode findLenderEntry(JsonNode lendersArray, String lenderEmail) {
         if (lendersArray == null || !lendersArray.isArray() || !StringUtils.hasText(lenderEmail)) return null;
@@ -179,23 +143,14 @@ public class LenderPayloadViewMapper {
         String local = lenderEmail.split("@")[0].toLowerCase(Locale.ROOT);
         String localNorm = normalize(local);
 
-        // try match by tokens from email (bnp.paribas -> "bnp" + "paribas")
         for (JsonNode l : lendersArray) {
-            String name = l.path("name").asText("");
-            String nameNorm = normalize(name);
-
-            // if all email tokens appear in lender name
-            if (allTokensPresent(localNorm, nameNorm)) {
-                return l;
-            }
+            String nameNorm = normalize(l.path("name").asText(""));
+            if (allTokensPresent(localNorm, nameNorm)) return l;
         }
 
-        // fallback: exact-ish contains
         for (JsonNode l : lendersArray) {
-            String name = l.path("name").asText("");
-            if (normalize(name).contains(localNorm.replace(" ", ""))) {
-                return l;
-            }
+            String nameNorm = normalize(l.path("name").asText(""));
+            if (nameNorm.contains(localNorm.replace(" ", ""))) return l;
         }
 
         return null;
@@ -208,7 +163,7 @@ public class LenderPayloadViewMapper {
             if (!StringUtils.hasText(t)) continue;
             if (nameNorm.contains(t)) hits++;
         }
-        return hits >= Math.max(1, tokens.length); // usually 2 tokens for bnp paribas
+        return hits >= Math.max(1, tokens.length);
     }
 
     private String normalize(String s) {
@@ -243,14 +198,12 @@ public class LenderPayloadViewMapper {
     }
 
     private String extractTotalSize(JsonNode full, JsonNode parties) {
-        // Prefer facilities[0].amount.value
         JsonNode facilities = full.path("facilities");
         if (facilities.isArray() && facilities.size() > 0) {
             String v = facilities.get(0).path("amount").path("value").asText(null);
             if (StringUtils.hasText(v)) return v;
         }
 
-        // fallback: first lenders entry "Total Commitments" style
         JsonNode lenders = parties.path("lenders");
         if (lenders.isArray() && lenders.size() > 0) {
             String v = lenders.get(0).path("shareAmount").path("value").asText(null);
@@ -286,28 +239,25 @@ public class LenderPayloadViewMapper {
 
     private String normalizeFacilityType(String type) {
         if (!StringUtils.hasText(type)) return null;
-        // Basic normalization like your expected example casing
         String t = type.trim();
-        if (t.equalsIgnoreCase("multicurrency term loan facility")) {
-            return "Multicurrency Term Loan Facility";
-        }
+        if (t.equalsIgnoreCase("multicurrency term loan facility")) return "Multicurrency Term Loan Facility";
         return t;
     }
 
     private String normalizeSharePercentage(String raw) {
         if (!StringUtils.hasText(raw)) return null;
 
-        // e.g. "Calculated: 33.33 percent"
         String s = raw.trim();
         boolean calculated = s.toLowerCase(Locale.ROOT).contains("calculated");
 
-        // extract number
         String num = s.replaceAll("[^0-9.]", "");
         if (!StringUtils.hasText(num)) return raw;
 
         try {
             BigDecimal bd = new BigDecimal(num).setScale(2, RoundingMode.HALF_UP);
-            return bd.toPlainString() + "% (Calculated)";
+            return calculated
+                    ? bd.toPlainString() + "% (Calculated)"
+                    : bd.toPlainString() + "%";
         } catch (Exception e) {
             return raw;
         }

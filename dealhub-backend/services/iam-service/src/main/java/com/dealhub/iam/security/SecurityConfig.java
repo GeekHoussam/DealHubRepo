@@ -31,19 +31,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // .cors(Customizer.withDefaults()) // enable later if needed
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable()) // JWT only
 
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ PUBLIC (auth)
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers("/auth/**").permitAll()
-
-                        // ✅ PUBLIC (swagger + actuator)
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -51,14 +47,11 @@ public class SecurityConfig {
                                 "/actuator/**"
                         ).permitAll()
 
-                        // ✅ ADMIN ONLY
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // ✅ EVERYTHING ELSE
                         .anyRequest().authenticated()
                 )
 
-                // ✅ JWT filter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

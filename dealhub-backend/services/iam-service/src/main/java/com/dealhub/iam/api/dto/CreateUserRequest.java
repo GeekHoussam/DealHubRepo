@@ -7,6 +7,6 @@ import jakarta.validation.constraints.NotNull;
 public record CreateUserRequest(
         @Email @NotBlank String email,
         @NotBlank String password,
-        @NotNull String role,     // "AGENT" | "LENDER" | "ADMIN"
-        Long lenderId             // required only when role == "LENDER"
+        @NotNull String role,
+        Long lenderId
 ) {}

@@ -26,7 +26,6 @@ public class ExtractionJobEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ✅ External public identifier (UUID) used by API + async worker
     @Column(name = "job_key", nullable = false, unique = true, length = 36)
     private String jobKey;
 

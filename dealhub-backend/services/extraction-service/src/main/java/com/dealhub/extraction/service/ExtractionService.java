@@ -32,7 +32,6 @@ public class ExtractionService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    // ✅ real extraction deps
     private final PdfTextExtractor pdfTextExtractor;
     private final LlmFacilityAgreementExtractor llmFacilityAgreementExtractor;
 
@@ -126,11 +125,6 @@ public class ExtractionService {
         return chunks;
     }
 
-    /**
-     * IMPORTANT:
-     * This schema is what the model must output EXACTLY.
-     * You can extend it gradually.
-     */
     private String facilityAgreementSchema(String profile) {
         return """
         {

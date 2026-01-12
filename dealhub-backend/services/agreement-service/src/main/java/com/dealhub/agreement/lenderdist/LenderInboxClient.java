@@ -5,7 +5,6 @@ import com.dealhub.agreement.api.dto.LenderInboxMessageRawDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -20,7 +19,6 @@ public class LenderInboxClient {
     private final RestClient rest;
     private final ObjectMapper mapper;
 
-    // ✅ call lender-mock service DIRECT (no gateway JWT)
     @Value("${app.lendermock.base-url:http://localhost:8090}")
     private String baseUrl;
 
@@ -54,7 +52,12 @@ public class LenderInboxClient {
             }
 
             out.add(new LenderInboxMessageDto(
-                    r.id(), r.dealName(), r.lenderId(), r.recipientEmail(), r.createdAt(), payloadNode
+                    r.id(),
+                    r.dealName(),
+                    r.lenderId(),
+                    r.recipientEmail(),
+                    r.createdAt(),
+                    payloadNode
             ));
         }
         return out;

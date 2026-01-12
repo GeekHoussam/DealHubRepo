@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 public interface AgreementParticipantRepository extends JpaRepository<AgreementParticipant, Long> {
     List<AgreementParticipant> findByLenderId(Long lenderId);
     boolean existsByAgreementIdAndLenderId(Long agreementId, Long lenderId);
-    // ✅ NEW: used by publishVersion() to notify all lenders in that agreement
+    //used by publishVersion() to notify all lenders in that agreement
     @Query("select distinct p.lenderId from AgreementParticipant p where p.agreementId = :agreementId")
     List<Long> findDistinctLenderIdsByAgreementId(@Param("agreementId") Long agreementId);
 }

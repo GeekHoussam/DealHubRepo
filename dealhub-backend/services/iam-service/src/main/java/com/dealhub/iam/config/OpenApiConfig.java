@@ -14,13 +14,6 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    /**
-     * This value is used so that Swagger "Try it out"
-     * calls the Gateway instead of the IAM service directly.
-     *
-     * Example:
-     * app.openapi.server-url=http://localhost:8080
-     */
     @Value("${app.openapi.server-url:}")
     private String serverUrl;
 
@@ -46,7 +39,6 @@ public class OpenApiConfig {
                                 )
                 );
 
-        // ✅ IMPORTANT: Force Swagger to call the Gateway (8080) instead of IAM (8081)
         if (serverUrl != null && !serverUrl.isBlank()) {
             openAPI.setServers(List.of(new Server().url(serverUrl.trim())));
         }

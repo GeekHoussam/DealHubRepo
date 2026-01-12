@@ -31,14 +31,6 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
-    /**
-     * Everything accessible without JWT.
-     * Add openapi endpoints here when you proxy them via gateway swagger aggregator.
-     *
-     * NOTE:
-     * Use prefix matching safely: we treat these as "path prefixes".
-     * Do NOT include "/" at the end unless you want strict behavior.
-     */
     private static final List<String> PUBLIC_PREFIXES = List.of(
             // Auth endpoints
             "/auth",
@@ -63,7 +55,6 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
     private final SecretKey signingKey;
 
-    // ✅ Used to allow internal system POST without JWT (optional but requested)
     private final String internalKey;
 
     public JwtAuthGlobalFilter(
@@ -83,30 +74,22 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         final String path = exchange.getRequest().getURI().getPath();
         final HttpMethod method = exchange.getRequest().getMethod();
 
-        // 1) Allow CORS preflight
         if (method == HttpMethod.OPTIONS) {
             return chain.filter(exchange);
         }
 
-        // 2) ✅ Allow internal lender inbox POST via X-INTERNAL-KEY (no JWT)
-        // This is useful for your "dispatch payload to lender inbox" system flow.
-        // - Only POST /lender-payloads/inbox is allowed by internal key
-        // - Everything else still requires JWT
         if (method == HttpMethod.POST && "/lender-payloads/inbox".equals(path)) {
             String key = exchange.getRequest().getHeaders().getFirst("X-INTERNAL-KEY");
             if (StringUtils.hasText(key) && key.equals(internalKey)) {
                 return chain.filter(exchange);
             }
-            // If internal key is missing/invalid, do NOT allow anonymous access
-            // (Require JWT instead)
+
         }
 
-        // 3) Allow public endpoints (Swagger, OpenAPI, Auth)
         if (isPublicPath(path)) {
             return chain.filter(exchange);
         }
 
-        // 4) Extract Bearer token
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith(BEARER_PREFIX)) {
             return unauthorized(exchange, "Missing or invalid Authorization header");
@@ -117,7 +100,6 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             return unauthorized(exchange, "Empty Bearer token");
         }
 
-        // 5) Validate JWT and extract claims
         Claims claims;
         try {
             Jws<Claims> jws = Jwts.parser()
@@ -134,7 +116,6 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             return serverError(exchange, "JWT validation error");
         }
 
-        // 6) Forward claims to downstream services as headers
         String userId = stringClaim(claims, "sub");
         String email = stringClaim(claims, "email");
         String role = stringClaim(claims, "role");
@@ -164,11 +145,6 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             String pr = prefix.trim();
             if (!pr.startsWith("/")) pr = "/" + pr;
 
-            // ✅ treat prefix as a path segment prefix:
-            // allow:
-            //  - exact match: /swagger-ui
-            //  - child paths: /swagger-ui/...
-            // do NOT allow: /swagger-uix (accidental)
             if (p.equals(pr) || p.startsWith(pr + "/")) {
                 return true;
             }

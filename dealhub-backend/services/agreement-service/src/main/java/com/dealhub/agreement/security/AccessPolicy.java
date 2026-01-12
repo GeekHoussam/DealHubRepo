@@ -16,21 +16,25 @@ public class AccessPolicy {
     }
 
     public boolean isAdminOrAgent(AuthenticatedUser u) {
+        if (u == null) return false;
         String r = norm(u.role());
         return "ADMIN".equals(r) || "AGENT".equals(r);
     }
 
     public boolean isLender(AuthenticatedUser u) {
+        if (u == null) return false;
         return "LENDER".equals(norm(u.role()));
     }
 
     public void requireAdminOrAgent(AuthenticatedUser u) {
         if (!isAdminOrAgent(u)) {
-            throw new AccessDeniedException("Forbidden for role=" + u.role());
+            throw new AccessDeniedException("Forbidden for role=" + (u == null ? "null" : u.role()));
         }
     }
+
+    /** ✅ FIXED: normalized + supports ROLE_LENDER, lender, LENDER, etc. */
     public void requireLender(AuthenticatedUser u) {
-        if (u == null || u.role() == null || !u.role().equals("LENDER")) {
+        if (!isLender(u)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "LENDER role required");
         }
     }

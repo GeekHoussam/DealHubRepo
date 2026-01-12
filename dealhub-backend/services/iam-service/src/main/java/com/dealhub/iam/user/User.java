@@ -25,7 +25,6 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
-    // only for LENDER users; null for ADMIN/AGENT
     private Long lenderId;
 
     @Column(nullable = false)

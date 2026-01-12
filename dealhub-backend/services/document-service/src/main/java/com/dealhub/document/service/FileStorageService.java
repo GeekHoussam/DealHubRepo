@@ -33,18 +33,15 @@ public class FileStorageService {
         try {
             Files.createDirectories(baseDir);
 
-            // Keep it simple: UUID filename, no extension (you store metadata separately)
             String storedFilename = UUID.randomUUID().toString();
             Path target = baseDir.resolve(storedFilename).normalize();
 
-            // Safety: prevent path traversal (should already be safe with UUID, but good practice)
             if (!target.startsWith(baseDir)) {
                 throw new SecurityException("Invalid storage path resolution");
             }
 
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
 
-            // ✅ Single pass: copy to disk while DigestInputStream updates the hash
             try (InputStream raw = file.getInputStream();
                  DigestInputStream in = new DigestInputStream(raw, digest)) {
                 Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
@@ -64,7 +61,6 @@ public class FileStorageService {
         }
         Path resolved = baseDir.resolve(storedFilename).normalize();
 
-        // Safety: prevent resolving outside baseDir
         if (!resolved.startsWith(baseDir)) {
             throw new SecurityException("Invalid storedFilename");
         }
@@ -76,7 +72,6 @@ public class FileStorageService {
         try {
             Files.deleteIfExists(resolve(storedFilename));
         } catch (Exception ignored) {
-            // best effort
         }
     }
 

@@ -192,35 +192,33 @@ public class AgreementController {
     @ApiResponse(responseCode = "200", description = "OK")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
     @ApiResponse(responseCode = "403", description = "Forbidden")
+    // =========================================
+// ✅ LENDER INBOX (LENDER only)
+// =========================================
     @GetMapping("/lender/inbox")
-    public List<LenderInboxMessageDto> myInbox(@AuthenticationPrincipal AuthenticatedUser user) {
-        AuthenticatedUser u = me(user);
+    public List<com.dealhub.agreement.api.dto.LenderInboxMessageDto> myInbox(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.dealhub.agreement.security.AuthenticatedUser user
+    ) {
+        com.dealhub.agreement.security.AuthenticatedUser u = user;
+        if (u == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED, "Missing auth"
+            );
+        }
+
         policy.requireLender(u);
 
         Long lenderId = u.lenderId();
         if (lenderId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing lenderId in token/profile");
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST,
+                    "Missing lenderId in token/profile"
+            );
         }
 
-        String lenderEmail = u.email();
-
-        List<LenderInboxMessageDto> messages = lenderInboxClient.getInboxForLender(lenderId);
-
-        return messages.stream()
-                .map(m -> new LenderInboxMessageDto(
-                        m.id(),
-                        m.dealName(),
-                        m.lenderId(),
-                        m.recipientEmail(),
-                        m.createdAt(),
-                        lenderPayloadViewMapper.buildLenderView(
-                                m.payload() == null ? com.fasterxml.jackson.databind.node.NullNode.instance : m.payload(),
-                                lenderEmail,
-                                m.dealName()
-                        )
-                ))
-                .toList();
+        return lenderInboxClient.getInboxForLender(lenderId);
     }
+
 
 
 }

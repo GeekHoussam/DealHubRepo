@@ -4,11 +4,10 @@ import java.util.Map;
 
 public class ExtractionResponse {
     private String jobKey;
-    private String status;  // DONE / FAILED / PENDING
-    private Map<String, Object> resultJson; // The actual extraction data
+    private String status;
+    private Map<String, Object> resultJson;
     private String errorMessage;
 
-    // Static method to create failed response
     public static ExtractionResponse failed(Long documentId, Long agreementId, String extractionProfile, String error) {
         ExtractionResponse r = new ExtractionResponse();
         r.setStatus("FAILED");

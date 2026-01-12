@@ -41,10 +41,9 @@ public class LenderInboxController {
             @RequestBody LenderPayloadDispatchRequest req,
             HttpServletRequest request
     ) {
-        // We keep your existing enforcement logic (source of truth)
         requireInternalKey(request);
 
-        if (req.lenderId() == null || req.recipientEmail() == null || req.payload() == null) {
+        if (req == null || req.lenderId() == null || req.recipientEmail() == null || req.payload() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "lenderId, recipientEmail, payload are required");
         }
 
@@ -52,7 +51,7 @@ public class LenderInboxController {
                 req.dealName(),
                 req.lenderId(),
                 req.recipientEmail(),
-                req.payload().toString() // ✅ JsonNode → String
+                req.payload().toString()
         ));
 
         log.info("[LENDER-INBOX] received dealName={} lenderId={} email={}",
@@ -60,7 +59,11 @@ public class LenderInboxController {
     }
 
     @GetMapping("/inbox/{lenderId}")
-    public List<InboxMessageEntity> getInbox(@PathVariable Long lenderId) {
+    public List<InboxMessageEntity> getInbox(
+            @PathVariable Long lenderId,
+            HttpServletRequest request
+    ) {
+        requireInternalKey(request);
         return repo.findTop50ByLenderIdOrderByCreatedAtDesc(lenderId);
     }
 }

@@ -43,10 +43,6 @@ public class DocumentController {
         return documentService.upload(file, agreementId, documentType, authorization);
     }
 
-    /**
-     * Download a previously uploaded document by its documentId.
-     * Example: GET /documents/14/download
-     */
     @GetMapping("/{documentId}/download")
     public ResponseEntity<Resource> download(@PathVariable Long documentId) {
 
@@ -62,7 +58,6 @@ public class DocumentController {
 
         Path filePath = storage.resolve(storedFilename);
 
-        // If DB row exists but file missing on disk
         if (!Files.exists(filePath)) {
             throw new org.springframework.web.server.ResponseStatusException(
                     org.springframework.http.HttpStatus.GONE, "File is missing on disk");

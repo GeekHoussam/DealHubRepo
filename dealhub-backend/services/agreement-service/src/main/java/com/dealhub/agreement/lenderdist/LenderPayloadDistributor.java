@@ -1,126 +1,121 @@
 package com.dealhub.agreement.lenderdist;
 
-import com.dealhub.agreement.lenderregistry.LenderResolverService;
+import com.dealhub.agreement.agreement.Agreement;
+import com.dealhub.agreement.agreement.AgreementRepository;
+import com.dealhub.agreement.agreement.AgreementParticipantRepository;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.server.ResponseStatusException;
 
-@Service
+import java.util.List;
+
+@Component
 public class LenderPayloadDistributor {
 
     private static final Logger log = LoggerFactory.getLogger(LenderPayloadDistributor.class);
 
-    private final LenderResolverService resolver;
+    private final AgreementParticipantRepository participantRepo;
+    private final AgreementRepository agreementRepo;
+    private final LenderPayloadViewMapper viewMapper;
+    private final ObjectMapper mapper;
     private final RestClient rest;
 
-    @Value("${app.lenderdist.base-url:http://localhost:8080}") // via gateway
-    private String baseUrl;
-
-    @Value("${app.lenderdist.inbox-path:/lender-payloads/inbox}")
-    private String inboxPath;
+    // go through gateway (recommended)
+    @Value("${app.lendermock.base-url:http://localhost:8080}")
+    private String lenderMockBaseUrl;
 
     @Value("${app.internal.key:dealhub-internal}")
     private String internalKey;
 
-    public LenderPayloadDistributor(LenderResolverService resolver, RestClient.Builder builder) {
-        this.resolver = resolver;
+    public LenderPayloadDistributor(
+            AgreementParticipantRepository participantRepo,
+            AgreementRepository agreementRepo,
+            LenderPayloadViewMapper viewMapper,
+            ObjectMapper mapper,
+            RestClient.Builder builder
+    ) {
+        this.participantRepo = participantRepo;
+        this.agreementRepo = agreementRepo;
+        this.viewMapper = viewMapper;
+        this.mapper = mapper;
         this.rest = builder.build();
     }
 
     /**
-     * Distribute lender-specific extracted payloads.
-     * IMPORTANT: This method does NOT guess. Unresolved lenders are skipped (and logged).
+     * Strategy A:
+     * On publish, compute lender view payload and send to lender-mock.
+     * lender-mock stores expected payload only.
      */
     public void distributeLenderPayloads(Long agreementId, Long versionId, JsonNode extractedJson) {
-        final String dealName = "Facility Agreement";
-
-        if (extractedJson == null || extractedJson.isNull()) {
-            log.warn("[LENDER-DIST] agreementId={} versionId={} extractedJson is null; skip", agreementId, versionId);
+        if (agreementId == null || extractedJson == null || extractedJson.isNull()) {
             return;
         }
 
-        JsonNode lendersNode = extractedJson.path("parties").path("lenders");
-        if (!(lendersNode instanceof ArrayNode lenders) || lenders.isEmpty()) {
-            log.info("[LENDER-DIST] agreementId={} versionId={} No lenders found at extractedJson.parties.lenders",
-                    agreementId, versionId);
+        Agreement agreement = agreementRepo.findById(agreementId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Agreement not found"));
+
+        String dealName = agreement.getName(); // "Demo Agreement" in your UI
+
+        // all lenders linked to this agreement
+        List<Long> lenderIds = participantRepo.findDistinctLenderIdsByAgreementId(agreementId);
+        if (lenderIds == null || lenderIds.isEmpty()) {
+            log.info("[LENDER-DIST] No participants for agreementId={}, skip", agreementId);
             return;
         }
 
-        final String url = baseUrl + inboxPath;
+        for (Long lenderId : lenderIds) {
+            if (lenderId == null) continue;
 
-        for (int i = 0; i < lenders.size(); i++) {
-            JsonNode lenderPayload = lenders.get(i);
+            // Your demo convention (same you described)
+            // lenderId=11 -> bnp.paribas@dealhub.com (if you want mapping by name, add lookup later)
+            String recipientEmail = buildRecipientEmailForLender(lenderId);
 
-            String lenderName = extractLenderName(lenderPayload);
-            if (lenderName == null || lenderName.isBlank()) {
-                log.warn("[LENDER-DIST] agreementId={} versionId={} lenderIndex={} Missing lender name; skipping",
-                        agreementId, versionId, i);
-                continue;
-            }
+            // ✅ build expected payload
+            ObjectNode expectedPayload = viewMapper.buildLenderView(extractedJson, recipientEmail, "Facility Agreement");
 
-            LenderResolverService.Resolution res = resolver.resolve(lenderName);
-
-            if (res.matchType() == LenderResolverService.MatchType.UNRESOLVED) {
-                log.warn("[LENDER-DIST] UNRESOLVED agreementId={} versionId={} lenderIndex={} raw='{}' norm='{}' reason='{}' bestScore={}",
-                        agreementId, versionId, i, res.rawName(), res.normalizedName(), res.reason(), res.score());
-                // Optional: persist audit record here
-                continue;
-            }
-
-            var req = new LenderPayloadDispatchRequest(
-                    dealName,
-                    res.lenderId(),
-                    res.recipientEmail(),
-                    lenderPayload
-            );
+            // ✅ POST to lender-mock inbox
+            ObjectNode req = mapper.createObjectNode();
+            req.put("dealName", dealName);
+            req.put("lenderId", lenderId);
+            req.put("recipientEmail", recipientEmail);
+            req.set("payload", expectedPayload); // payload as JSON
 
             try {
-                var resp = rest.post()
-                        .uri(url)
+                rest.post()
+                        .uri(lenderMockBaseUrl + "/lender-payloads/inbox")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("X-INTERNAL-KEY", internalKey)
                         .body(req)
                         .retrieve()
                         .toBodilessEntity();
 
-                log.info("[LENDER-DIST] SENT agreementId={} versionId={} lenderIndex={} lenderId={} email={} matchType={} score={} http={}",
-                        agreementId, versionId, i, res.lenderId(), res.recipientEmail(), res.matchType(), res.score(),
-                        resp.getStatusCode().value());
-
+                log.info("[LENDER-DIST] sent agreementId={} versionId={} lenderId={} email={}",
+                        agreementId, versionId, lenderId, recipientEmail);
             } catch (Exception e) {
-                log.warn("[LENDER-DIST] FAILED agreementId={} versionId={} lenderIndex={} lenderId={} url={} err={}",
-                        agreementId, versionId, i, res.lenderId(), url, e.getMessage(), e);
+                log.warn("[LENDER-DIST] failed lenderId={} agreementId={} : {}",
+                        lenderId, agreementId, e.getMessage(), e);
             }
         }
     }
 
     /**
-     * Robust name extraction with fallbacks.
-     * Supports typical extraction shapes without blowing up.
+     * Demo mapping:
+     * Replace this with DB lookup later (IAM/participants table).
      */
-    private String extractLenderName(JsonNode lenderPayload) {
-        if (lenderPayload == null || lenderPayload.isNull()) return null;
+    private String buildRecipientEmailForLender(Long lenderId) {
+        // ✅ for BNP demo:
+        // if your BNP lenderId is fixed (ex: 11), you can hard-map it:
+        if (lenderId == 11L) return "bnp.paribas@dealhub.com";
 
-        // Your current shape: name.value
-        String v1 = lenderPayload.path("name").path("value").asText(null);
-        if (v1 != null && !v1.isBlank()) return v1;
-
-        // Fallbacks (depending on extract prompt evolution)
-        String v2 = lenderPayload.path("lenderName").path("value").asText(null);
-        if (v2 != null && !v2.isBlank()) return v2;
-
-        String v3 = lenderPayload.path("lender").path("value").asText(null);
-        if (v3 != null && !v3.isBlank()) return v3;
-
-        // Sometimes name might be a plain string
-        String v4 = lenderPayload.path("name").asText(null);
-        if (v4 != null && !v4.isBlank()) return v4;
-
-        return null;
+        // fallback demo email
+        return "lender" + lenderId + "@dealhub.com";
     }
 }

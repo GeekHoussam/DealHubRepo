@@ -1,12 +1,12 @@
 package com.dealhub.agreement.api.dto;
 
-import java.time.Instant;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record LenderInboxMessageRawDto(
         Long id,
-        String dealName,
-        Long lenderId,
-        String recipientEmail,
-        Instant createdAt,
-        String payload
+        @JsonProperty("dealName") String dealName,
+        @JsonProperty("lenderId") Long lenderId,
+        @JsonProperty("recipientEmail") String recipientEmail,
+        @JsonProperty("createdAt") String createdAt,
+        @JsonProperty("payload") String payload
 ) {}

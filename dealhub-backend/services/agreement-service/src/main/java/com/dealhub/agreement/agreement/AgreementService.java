@@ -28,17 +28,14 @@ public class AgreementService {
     private final AgreementRepository agreementRepo;
     private final AgreementVersionRepository versionRepo;
     private final AgreementParticipantRepository participantRepo;
-
     private final RestClient rest;
-
-    // ✅ NEW: lender-mock distribution (expected lender payload)
     private final LenderDistributionService lenderDistributionService;
 
-    // Call notification-service through gateway (recommended)
+    // Call notification-service through gateway
     @Value("${app.notification.base-url:http://localhost:8080}")
     private String notificationBaseUrl;
 
-    // Simple internal key for demo (same as IAM internal key)
+    // internal key
     @Value("${app.internal.key:dealhub-internal}")
     private String internalKey;
 
@@ -123,10 +120,10 @@ public class AgreementService {
     }
 
     /**
-     * ✅ Publish:
+     *  Publish:
      * - publish version
-     * - distribute lender-specific expected payloads to lender-mock (non-blocking)
-     * - notify notification-service (non-blocking)
+     * - distribute lender-specific expected payloads to lender-mock
+     * - notify notification-service
      */
     @Transactional
     public AgreementVersion publishVersion(Long versionId, Long userId) {
@@ -140,12 +137,12 @@ public class AgreementService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
 
-        // ✅ Save published version first (source of truth)
+        // Save published version
         AgreementVersion published = versionRepo.save(v);
 
         Long agreementId = published.getAgreementId();
 
-        // ✅ Load agreement (used for dealName)
+        // Load agreement
         Agreement agreement = agreementRepo.findById(agreementId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Agreement not found"));
 
@@ -154,7 +151,7 @@ public class AgreementService {
                 : "Facility Agreement";
 
         // =========================================================
-        // ✅ 1) LENDER-SPECIFIC DISTRIBUTION (non-blocking)
+        //  LENDER-SPECIFIC DISTRIBUTION
         // =========================================================
         try {
             lenderDistributionService.sendToAllLenders(
@@ -171,7 +168,7 @@ public class AgreementService {
         }
 
         // =========================================================
-        // ✅ 2) NOTIFICATION SERVICE (non-blocking) - keep your logic
+        // NOTIFICATION SERVICE
         // =========================================================
         try {
             List<Long> lenderIds = participantRepo.findDistinctLenderIdsByAgreementId(agreementId);

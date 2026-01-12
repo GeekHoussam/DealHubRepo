@@ -9,6 +9,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
 
-    // ✅ NEW: used by /internal/lenders/{lenderId}/emails
     List<User> findByRoleAndLenderId(Role role, Long lenderId);
 }

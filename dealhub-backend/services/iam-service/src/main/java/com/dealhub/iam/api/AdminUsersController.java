@@ -39,7 +39,7 @@ public class AdminUsersController {
         );
     }
 
-    // ✅ LIST USERS
+     //LIST USERS
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserDto> list() {
@@ -49,7 +49,7 @@ public class AdminUsersController {
                 .toList();
     }
 
-    // ✅ CREATE USER (already working)
+    //CREATE USER
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
@@ -81,7 +81,7 @@ public class AdminUsersController {
         return toDto(userRepo.save(u));
     }
 
-    // ✅ ENABLE / DISABLE USER
+    // ENABLE / DISABLE USER
     @PatchMapping("/{id}/enabled")
     @PreAuthorize("hasRole('ADMIN')")
     public UserDto setEnabled(@PathVariable Long id, @Valid @RequestBody UpdateUserEnabledRequest req) {
@@ -92,7 +92,7 @@ public class AdminUsersController {
         return toDto(userRepo.save(u));
     }
 
-    // ✅ RESET PASSWORD
+    // RESET PASSWORD
     @PatchMapping("/{id}/password")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
