@@ -1,13 +1,11 @@
-// src/pages/AgreementDetail/AgreementDetailPage.tsx
-
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import {
-  getVersionById,          // ✅ version-based GET
-  getDraftVersion,         // (optional if your backend has it)
-  getValidatedVersion,     // (optional if your backend has it)
+  getVersionById,
+  getDraftVersion,
+  getValidatedVersion,
   patchVersion,
   validateVersionById,
   publishVersion,
@@ -46,15 +44,14 @@ function pickJsonFromVersion(v: any) {
 
 export default function AgreementDetailPage() {
   const nav = useNavigate();
-  const { id, versionId } = useParams(); // ✅ supports both routes
+  const { id, versionId } = useParams();
   const [sp] = useSearchParams();
 
-  const mode = sp.get("mode"); // "edit" or null
+  const mode = sp.get("mode");
   const initialTab = (sp.get("tab") as Tab | null) ?? null;
   const showParticipants = sp.get("tab") === "participants";
 
   const [tab, setTab] = useState<Tab>("draft");
-
   const [agreementId, setAgreementId] = useState<number | null>(null);
 
   const [draftVersion, setDraftVersion] = useState<any | null>(null);
@@ -68,7 +65,6 @@ export default function AgreementDetailPage() {
 
   const canEditDraft = mode === "edit";
 
-  // Decide what we are loading
   const agreementIdFromRoute = Number(id);
   const versionIdFromRoute = Number(versionId);
 
@@ -79,15 +75,14 @@ export default function AgreementDetailPage() {
       const aId = Number((v as any)?.agreementId);
       if (Number.isFinite(aId) && aId > 0) setAgreementId(aId);
 
-      // Put loaded version into correct slot based on status
       const status = String((v as any)?.status ?? "").toUpperCase();
       if (status === "VALIDATED" || status === "PUBLISHED") {
         setValidatedVersion(v);
-        setDraftVersion(null); // optional
+        setDraftVersion(null);
         setTab("validated");
       } else {
         setDraftVersion(v);
-        setValidatedVersion(null); // optional
+        setValidatedVersion(null);
         setTab("draft");
       }
 
@@ -95,7 +90,9 @@ export default function AgreementDetailPage() {
       setEditorText(safeJsonStringify(payload));
     } catch (e: any) {
       console.error(e);
-      toast.error("Failed to load version", { description: e?.message ?? String(e) });
+      toast.error("Failed to load version", {
+        description: e?.message ?? String(e),
+      });
     }
   }
 
@@ -121,26 +118,24 @@ export default function AgreementDetailPage() {
       setEditorText(safeJsonStringify(payload));
     } catch (e: any) {
       console.error(e);
-      toast.error("Failed to load agreement versions", { description: e?.message ?? String(e) });
+      toast.error("Failed to load agreement versions", {
+        description: e?.message ?? String(e),
+      });
     }
   }
 
-  // Initial load
   useEffect(() => {
-    // ✅ Prefer version route
     if (Number.isFinite(versionIdFromRoute) && versionIdFromRoute > 0) {
       loadByVersion(versionIdFromRoute);
       return;
     }
 
-    // Fallback to old agreement route
     if (Number.isFinite(agreementIdFromRoute) && agreementIdFromRoute > 0) {
       loadByAgreement(agreementIdFromRoute);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, versionId]);
 
-  // Derived
   const currentVersion = tab === "draft" ? draftVersion : validatedVersion;
   const currentVersionId = Number(currentVersion?.id) || null;
   const currentStatus = String(currentVersion?.status ?? "");
@@ -164,18 +159,25 @@ export default function AgreementDetailPage() {
       return;
     }
     if (!canEditDraft) {
-      toast.error("Read-only", { description: "Open with ?mode=edit to edit draft JSON." });
+      toast.error("Read-only", {
+        description: "Open with ?mode=edit to edit draft JSON.",
+      });
       return;
     }
     if (!parsedEditorJson) {
-      toast.error("Invalid JSON", { description: "Fix JSON syntax before saving." });
+      toast.error("Invalid JSON", {
+        description: "Fix JSON syntax before saving.",
+      });
       return;
     }
 
     setBusySave(true);
     try {
-      // agreementId parameter is ignored in your patchVersion helper (backend uses /versions/{id})
-      const updated = await patchVersion(agreementId ?? 0, draftVersion.id, parsedEditorJson);
+      const updated = await patchVersion(
+        agreementId ?? 0,
+        draftVersion.id,
+        parsedEditorJson
+      );
       setDraftVersion(updated);
       toast.success("Draft saved");
 
@@ -199,13 +201,13 @@ export default function AgreementDetailPage() {
       await validateVersionById(draftVersion.id);
       toast.success("Validated");
 
-      // If we are on version route, reload the validated version by hitting list endpoints is optional.
-      // For speed: just reload the current version id (backend will now return VALIDATED).
       await loadByVersion(draftVersion.id);
       setTab("validated");
     } catch (e: any) {
       console.error(e);
-      toast.error("Validation failed", { description: e?.message ?? String(e) });
+      toast.error("Validation failed", {
+        description: e?.message ?? String(e),
+      });
     } finally {
       setBusyValidate(false);
     }
@@ -213,7 +215,9 @@ export default function AgreementDetailPage() {
 
   const onPublishValidated = async () => {
     if (!validatedVersion?.id) {
-      toast.error("No validated version to publish", { description: "Validate the draft first." });
+      toast.error("No validated version to publish", {
+        description: "Validate the draft first.",
+      });
       return;
     }
 
@@ -235,12 +239,14 @@ export default function AgreementDetailPage() {
   };
 
   const onExportJson = async () => {
-    const payload = tab === "draft" ? parsedEditorJson ?? {} : validatedJson ?? {};
+    const payload =
+      tab === "draft" ? parsedEditorJson ?? {} : validatedJson ?? {};
     await exportJson(currentVersionId ?? agreementId ?? "agreement", payload);
   };
 
   const onExportCsv = async () => {
-    const payload = tab === "draft" ? parsedEditorJson ?? {} : validatedJson ?? {};
+    const payload =
+      tab === "draft" ? parsedEditorJson ?? {} : validatedJson ?? {};
     await exportCsv(currentVersionId ?? agreementId ?? "agreement", payload);
   };
 
@@ -257,13 +263,15 @@ export default function AgreementDetailPage() {
 
           {showParticipants && (
             <p className="text-white/70 text-sm mt-1">
-              Participants view is not implemented on this page yet (redirected from Dashboard).
+              Participants view is not implemented on this page yet (redirected
+              from Dashboard).
             </p>
           )}
 
           {mode !== "edit" && (
             <p className="text-white/60 text-sm mt-1">
-              Tip: open <span className="font-mono">?mode=edit</span> to enable draft editing.
+              Tip: open <span className="font-mono">?mode=edit</span> to enable
+              draft editing.
             </p>
           )}
         </div>
@@ -273,7 +281,11 @@ export default function AgreementDetailPage() {
             className="rounded-xl px-4 py-2 bg-white/10 text-white hover:bg-white/15 disabled:opacity-60"
             onClick={onSavePatch}
             disabled={busySave || !canSave}
-            title={!canEditDraft ? "Open with ?mode=edit to enable editing" : undefined}
+            title={
+              !canEditDraft
+                ? "Open with ?mode=edit to enable editing"
+                : undefined
+            }
           >
             {busySave ? "Saving..." : "Save (patch)"}
           </button>
@@ -290,7 +302,11 @@ export default function AgreementDetailPage() {
             className="rounded-xl px-4 py-2 bg-white/10 text-white hover:bg-white/15 disabled:opacity-60"
             onClick={onPublishValidated}
             disabled={busyPublish || !canPublish}
-            title={!hasValidated ? "Validate first to create a validated version" : undefined}
+            title={
+              !hasValidated
+                ? "Validate first to create a validated version"
+                : undefined
+            }
           >
             {busyPublish ? "Publishing..." : "Publish Validated"}
           </button>
@@ -318,11 +334,12 @@ export default function AgreementDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-4">
         <button
           className={`px-4 py-2 rounded-lg ${
-            tab === "draft" ? "bg-white text-[#0B1F3B]" : "bg-white/10 text-white"
+            tab === "draft"
+              ? "bg-white text-[#0B1F3B]"
+              : "bg-white/10 text-white"
           }`}
           onClick={() => {
             setTab("draft");
@@ -337,7 +354,9 @@ export default function AgreementDetailPage() {
 
         <button
           className={`px-4 py-2 rounded-lg ${
-            tab === "validated" ? "bg-white text-[#0B1F3B]" : "bg-white/10 text-white"
+            tab === "validated"
+              ? "bg-white text-[#0B1F3B]"
+              : "bg-white/10 text-white"
           }`}
           onClick={() => setTab("validated")}
           disabled={!validatedVersion}
@@ -349,7 +368,10 @@ export default function AgreementDetailPage() {
 
       <div className="bg-white/10 rounded-2xl p-5 text-white">
         <div className="text-sm text-white/80 mb-2">
-          Status: <span className="font-semibold text-white">{currentStatus || "—"}</span>
+          Status:{" "}
+          <span className="font-semibold text-white">
+            {currentStatus || "—"}
+          </span>
         </div>
 
         {tab === "draft" ? (

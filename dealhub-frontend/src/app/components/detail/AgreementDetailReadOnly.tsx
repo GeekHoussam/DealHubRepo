@@ -9,7 +9,11 @@ function fieldValue<T>(f?: ExtractionField<T> | null): string | undefined {
   return String(v);
 }
 
-export function AgreementDetailReadOnly({ version }: { version: AgreementVersion }) {
+export function AgreementDetailReadOnly({
+  version,
+}: {
+  version: AgreementVersion;
+}) {
   const job = version.extractedJson;
   const result = job?.resultJson;
 
@@ -29,7 +33,9 @@ export function AgreementDetailReadOnly({ version }: { version: AgreementVersion
       <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-600">Agreement (read-only)</p>
-          <p className="text-lg font-semibold text-gray-900">Version #{version.id}</p>
+          <p className="text-lg font-semibold text-gray-900">
+            Version #{version.id}
+          </p>
 
           {version.validatedAt && (
             <p className="text-xs text-gray-500">
@@ -41,17 +47,27 @@ export function AgreementDetailReadOnly({ version }: { version: AgreementVersion
 
         <div className="flex items-center gap-2">
           <AgreementStatusBadge status={version.status} />
-          <Button variant="outline" onClick={() => exportJson(String(version.agreementId))}>
+          <Button
+            variant="outline"
+            onClick={() => exportJson(String(version.agreementId))}
+          >
             Download JSON
           </Button>
-          <Button variant="outline" onClick={() => exportCsv(String(version.agreementId))}>
+          <Button
+            variant="outline"
+            onClick={() => exportCsv(String(version.agreementId))}
+          >
             Download CSV
           </Button>
         </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-        <Field label="Borrower" value={borrower} evidence={result.parties?.borrowerName?.evidence} />
+        <Field
+          label="Borrower"
+          value={borrower}
+          evidence={result.parties?.borrowerName?.evidence}
+        />
         <Field
           label="Administrative agent"
           value={agent}
@@ -85,11 +101,18 @@ export function AgreementDetailReadOnly({ version }: { version: AgreementVersion
           <div className="space-y-2">
             {Array.isArray(result.facilities) && result.facilities.length > 0 ? (
               result.facilities.map((f, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-3">
-                  <p className="font-semibold text-gray-800">{fieldValue(f.facilityType) ?? "Facility"}</p>
+                <div
+                  key={idx}
+                  className="border border-gray-200 rounded-lg p-3"
+                >
+                  <p className="font-semibold text-gray-800">
+                    {fieldValue(f.facilityType) ?? "Facility"}
+                  </p>
                   <p className="text-gray-600">{fieldValue(f.amount) ?? "—"}</p>
                   {f.amount?.evidence && (
-                    <p className="mt-1 text-xs text-gray-500">Evidence: “{f.amount.evidence}”</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Evidence: “{f.amount.evidence}”
+                    </p>
                   )}
                 </div>
               ))
@@ -102,12 +125,22 @@ export function AgreementDetailReadOnly({ version }: { version: AgreementVersion
         <div className="md:col-span-2">
           <p className="text-xs uppercase text-gray-500 mb-1">Lenders</p>
           <div className="space-y-2">
-            {Array.isArray(result.parties?.lenders) && result.parties.lenders.length > 0 ? (
+            {Array.isArray(result.parties?.lenders) &&
+            result.parties.lenders.length > 0 ? (
               result.parties.lenders.map((l, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-3">
-                  <p className="font-semibold text-gray-800">{fieldValue(l.name) ?? "Lender"}</p>
-                  <p className="text-gray-600">{fieldValue(l.shareAmount) ?? "—"}</p>
-                  <p className="text-gray-500 text-xs">{fieldValue(l.sharePercentage) ?? ""}</p>
+                <div
+                  key={idx}
+                  className="border border-gray-200 rounded-lg p-3"
+                >
+                  <p className="font-semibold text-gray-800">
+                    {fieldValue(l.name) ?? "Lender"}
+                  </p>
+                  <p className="text-gray-600">
+                    {fieldValue(l.shareAmount) ?? "—"}
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    {fieldValue(l.sharePercentage) ?? ""}
+                  </p>
                 </div>
               ))
             ) : (
@@ -133,7 +166,9 @@ function Field({
     <div>
       <p className="text-xs uppercase text-gray-500 mb-1">{label}</p>
       <p className="text-gray-800">{value || "—"}</p>
-      {evidence && <p className="mt-1 text-xs text-gray-500">Evidence: “{evidence}”</p>}
+      {evidence && (
+        <p className="mt-1 text-xs text-gray-500">Evidence: “{evidence}”</p>
+      )}
     </div>
   );
 }

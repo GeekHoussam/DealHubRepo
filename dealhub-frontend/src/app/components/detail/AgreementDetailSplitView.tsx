@@ -41,7 +41,9 @@ export function AgreementDetailSplitView({
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
         <header className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Extracted fields</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Extracted fields
+            </h3>
             {version.validatedAt && (
               <p className="text-xs text-gray-500">
                 Validated on {new Date(version.validatedAt).toLocaleString()}{" "}
@@ -50,7 +52,11 @@ export function AgreementDetailSplitView({
             )}
           </div>
 
-          <Button variant="outline" className="text-sm" onClick={() => setShowJson((p) => !p)}>
+          <Button
+            variant="outline"
+            className="text-sm"
+            onClick={() => setShowJson((p) => !p)}
+          >
             {showJson ? "Hide JSON" : "Show JSON"}
           </Button>
         </header>

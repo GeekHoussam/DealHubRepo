@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { AgreementsTable } from "./AgreementsTable";
-import { AgreementSummary } from "../../types";
-import { listHistoricalAgreements } from "../../api/agreementsApi";
+import type { AgreementSummary } from "../../types";
+import { listHistoricalAgreementSummaries } from "../../api/agreementsApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -16,7 +16,7 @@ export function LenderAgreementsTable() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const rows = await listHistoricalAgreements(search);
+        const rows = await listHistoricalAgreementSummaries(search);
         setData(rows);
       } catch {
         toast.error("Failed to load lender agreements");

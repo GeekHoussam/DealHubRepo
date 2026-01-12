@@ -1,13 +1,8 @@
-// src/app/api/http.ts
-
 const TOKEN_KEY = "dealhub_token";
 
 export const API_BASE_URL: string =
   (import.meta as any).env?.VITE_API_BASE_URL ?? "http://localhost:8080";
 
-/**
- * Resolve an API path to an absolute URL
- */
 export function resolveApiUrl(path: string): string {
   if (!path) return API_BASE_URL;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -34,7 +29,6 @@ type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 async function handleResponse(res: Response) {
   if (res.status === 401) {
-    // Clear token so UI redirects to login cleanly
     setAuthToken(null);
     throw new Error("Unauthorized");
   }
@@ -48,7 +42,8 @@ async function handleResponse(res: Response) {
 }
 
 function authHeader(): Record<string, string> {
-  const t = getAuthToken(); // ✅ always fresh
+  const t = getAuthToken();
+
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
@@ -91,7 +86,6 @@ export async function httpForm<T>(url: string, form: FormData): Promise<T> {
     method: "POST",
     headers: {
       ...authHeader(),
-      // DO NOT set Content-Type for FormData
     },
     body: form,
   });

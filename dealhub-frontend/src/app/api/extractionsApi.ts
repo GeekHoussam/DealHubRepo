@@ -8,9 +8,9 @@ export type PollOptions = {
 };
 
 function extractJobKey(r: ExtractionResponse): string {
-  // backend may return jobKey OR id OR key
   const key = r.jobKey ?? r.id ?? r.key;
-  if (!key) throw new Error("ExtractionResponse missing job key (jobKey/id/key)");
+  if (!key)
+    throw new Error("ExtractionResponse missing job key (jobKey/id/key)");
   return String(key);
 }
 
@@ -20,21 +20,33 @@ function extractJobKey(r: ExtractionResponse): string {
 export async function startExtraction(
   req: StartExtractionRequest
 ): Promise<{ jobKey: string; response: ExtractionResponse }> {
-  const response = await httpJson<ExtractionResponse>("POST", "/extractions/start", req);
+  const response = await httpJson<ExtractionResponse>(
+    "POST",
+    "/extractions/start",
+    req
+  );
   return { jobKey: extractJobKey(response), response };
 }
 
 /**
  * Get job state by jobKey.
  */
-export async function getExtraction(jobKey: string): Promise<ExtractionResponse> {
-  return httpJson<ExtractionResponse>("GET", `/extractions/${encodeURIComponent(jobKey)}`);
+export async function getExtraction(
+  jobKey: string
+): Promise<ExtractionResponse> {
+  return httpJson<ExtractionResponse>(
+    "GET",
+    `/extractions/${encodeURIComponent(jobKey)}`
+  );
 }
 
 /**
  * Poll until terminal status or timeout.
  */
-export async function pollExtraction(jobKey: string, opts: PollOptions = {}): Promise<ExtractionResponse> {
+export async function pollExtraction(
+  jobKey: string,
+  opts: PollOptions = {}
+): Promise<ExtractionResponse> {
   const intervalMs = opts.intervalMs ?? 1500;
   const timeoutMs = opts.timeoutMs ?? 180_000;
   const startedAt = Date.now();
@@ -58,14 +70,15 @@ export async function pollExtraction(jobKey: string, opts: PollOptions = {}): Pr
     const job = await getExtraction(jobKey);
     const status = String(job.status ?? "").toUpperCase();
 
-    // adapt if your backend uses different names
     const doneStatuses = new Set(["COMPLETED", "DONE", "SUCCESS", "SUCCEEDED"]);
     const failedStatuses = new Set(["FAILED", "ERROR"]);
 
     if (doneStatuses.has(status) || failedStatuses.has(status)) return job;
 
     if (Date.now() - startedAt > timeoutMs) {
-      throw new Error(`Extraction polling timed out after ${timeoutMs}ms (jobKey=${jobKey})`);
+      throw new Error(
+        `Extraction polling timed out after ${timeoutMs}ms (jobKey=${jobKey})`
+      );
     }
 
     await sleep(intervalMs);

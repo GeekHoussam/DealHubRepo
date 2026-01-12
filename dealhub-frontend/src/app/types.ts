@@ -23,7 +23,7 @@ export interface AgreementSummary {
   myCommitment?: number;
 }
 
-/** ✅ New: extraction field shape you showed in JSON */
+/** ✅ Extraction field shape */
 export type ExtractionField<T> = {
   value: T;
   citation?: string | null;
@@ -81,7 +81,7 @@ export interface AgreementVersion {
   id: number;
   agreementId: number;
   status: AgreementStatus;
-  extractedJson: ExtractionJob; // ✅ not flat fields anymore
+  extractedJson: ExtractionJob;
   createdAt?: string;
   validatedAt?: string | null;
   validatedBy?: string | null;
@@ -97,6 +97,11 @@ export interface AuditLogEntry {
 }
 
 export interface EditableFields {
-  // keep your editor payload shape (whatever your PATCH expects)
   [key: string]: any;
+}
+
+export interface FacilityDetails {
+  type?: string;
+  currency?: string;
+  amount?: string | number;
 }

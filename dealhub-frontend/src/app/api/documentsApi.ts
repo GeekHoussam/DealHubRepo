@@ -13,9 +13,7 @@ export async function uploadDocument(
   if (agreementId) qs.set("agreementId", String(agreementId));
   if (documentType) qs.set("documentType", documentType);
 
-  const url = qs.toString()
-    ? `/documents/upload?${qs}`
-    : "/documents/upload";
+  const url = qs.toString() ? `/documents/upload?${qs}` : "/documents/upload";
 
   return httpForm<UploadDocumentResponse>(url, form);
 }

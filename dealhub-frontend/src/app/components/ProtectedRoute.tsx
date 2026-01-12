@@ -7,11 +7,13 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  allowedRoles,
+  children,
+}: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  // Wait for /auth/me to finish
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white">
@@ -20,12 +22,10 @@ export function ProtectedRoute({ allowedRoles, children }: ProtectedRouteProps) 
     );
   }
 
-  // Not logged in -> go to login, preserve where user wanted to go
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  // Logged in but role not allowed -> redirect to dashboard (safe)
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
   }

@@ -1,11 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
-import { getLenderInbox, type LenderInboxMessageDto } from "../../api/agreementsApi";
+import {
+  getLenderInbox,
+  type LenderInboxMessageDto,
+} from "../../api/agreementsApi";
 
-function formatDate(iso?: string) {
+function formatDate(iso?: string | null) {
   if (!iso) return "-";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString();
+}
+
+function prettyJson(value: unknown): string {
+  if (value === null || value === undefined) return "(empty payload)";
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
 }
 
 export function LenderInboxPage() {
@@ -68,7 +80,9 @@ export function LenderInboxPage() {
 
       {!loading && !error && sorted.length === 0 && (
         <div className="mt-6 bg-white rounded-xl border border-gray-200 p-8 text-center">
-          <div className="font-semibold text-[#0B1F3B]">No payloads received yet</div>
+          <div className="font-semibold text-[#0B1F3B]">
+            No payloads received yet
+          </div>
           <div className="text-sm text-gray-600 mt-1">
             When a deal is distributed to your lender, it will appear here.
           </div>
@@ -91,9 +105,15 @@ export function LenderInboxPage() {
               <tbody className="divide-y divide-gray-100">
                 {sorted.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-700">{formatDate(r.createdAt)}</td>
-                    <td className="px-4 py-3 text-[#0B1F3B] font-medium">{r.dealName || "-"}</td>
-                    <td className="px-4 py-3 text-gray-700">{r.recipientEmail || "-"}</td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {formatDate(r.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-[#0B1F3B] font-medium">
+                      {r.dealName || "-"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {r.recipientEmail || "-"}
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setOpen(r)}
@@ -105,13 +125,11 @@ export function LenderInboxPage() {
                   </tr>
                 ))}
               </tbody>
-
             </table>
           </div>
         </div>
       )}
 
-      {/* Modal */}
       {open && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
           <div className="w-full max-w-3xl bg-white rounded-xl border border-gray-200 shadow-xl overflow-hidden">
@@ -133,15 +151,7 @@ export function LenderInboxPage() {
 
             <div className="p-4">
               <pre className="max-h-[70vh] overflow-auto text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 whitespace-pre-wrap break-words">
-                {(() => {
-                  const raw = open.payload ?? "";
-                  try {
-                    const obj = JSON.parse(raw);
-                    return JSON.stringify(obj, null, 2);
-                  } catch {
-                    return raw || "(empty payload)";
-                  }
-                })()}
+                {prettyJson(open.payload)}
               </pre>
             </div>
           </div>

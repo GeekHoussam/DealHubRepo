@@ -111,10 +111,15 @@ export default function DashboardPage() {
   const [chatInput, setChatInput] = useState("");
 
   const [convertOpen, setConvertOpen] = useState(false);
-  const [convertTarget, setConvertTarget] = useState<"LoanIQ" | "WSO" | "Oneiro">("LoanIQ");
-  const [convertStatus, setConvertStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [convertTarget, setConvertTarget] = useState<
+    "LoanIQ" | "WSO" | "Oneiro"
+  >("LoanIQ");
+  const [convertStatus, setConvertStatus] = useState<
+    "idle" | "sending" | "sent"
+  >("idle");
 
-  const dealPayloadForLender: JsonValue = structuredDealDataset as unknown as JsonValue;
+  const dealPayloadForLender: JsonValue =
+    structuredDealDataset as unknown as JsonValue;
 
   async function load() {
     setLoading(true);
@@ -177,7 +182,8 @@ export default function DashboardPage() {
       for (const versionId of missingVersionIds) {
         try {
           const v = await getVersionById(versionId);
-          const extracted = (v as any)?.extractedJson ?? (v as any)?.extracted ?? null;
+          const extracted =
+            (v as any)?.extractedJson ?? (v as any)?.extracted ?? null;
           if (extracted) updates[versionId] = extracted;
         } catch {
           // ignore per-row failures
@@ -211,6 +217,7 @@ export default function DashboardPage() {
       );
     }
 
+    // NOTE: this filter is applied only in "recent" as in your code
     if (q.trim() && tab === "recent") {
       const qq = q.trim().toLowerCase();
       r = r.filter((x: any) => {
@@ -227,7 +234,9 @@ export default function DashboardPage() {
   const onView = (row: any) => {
     const versionId = pickAnyVersionId(row);
     if (!versionId) {
-      toast.error("No version available to view (missing versionId in dashboard row)");
+      toast.error(
+        "No version available to view (missing versionId in dashboard row)"
+      );
       return;
     }
     nav(`/agreements/versions/${versionId}`);
@@ -236,7 +245,9 @@ export default function DashboardPage() {
   const onEdit = (row: any) => {
     const versionId = pickAnyVersionId(row);
     if (!versionId) {
-      toast.error("No version available to edit (missing versionId in dashboard row)");
+      toast.error(
+        "No version available to edit (missing versionId in dashboard row)"
+      );
       return;
     }
     nav(`/agreements/versions/${versionId}?mode=edit`);
@@ -272,7 +283,9 @@ export default function DashboardPage() {
       await load();
     } catch (e: any) {
       console.error(e);
-      toast.error("Validation failed", { description: e?.message ?? String(e) });
+      toast.error("Validation failed", {
+        description: e?.message ?? String(e),
+      });
     }
   };
 
@@ -287,21 +300,22 @@ export default function DashboardPage() {
     const msg = chatInput.trim();
     if (!msg) return;
     const now = new Date().toISOString();
+
     setChatThread((prev) => [
       ...prev,
       { id: `u-${prev.length + 1}`, from: "LENDER", text: msg, ts: now },
       {
         id: `a-${prev.length + 2}`,
         from: "AGENT",
-        text:
-          "Received ✅ (mock). In production this is stored and auditable against the validated version.",
+        text: "Received ✅ (mock). In production this is stored and auditable against the validated version.",
         ts: new Date(Date.now() + 20_000).toISOString(),
       },
     ]);
+
     setChatInput("");
   }
 
-  function openConvert(row: any) {
+  function openConvert(_row: any) {
     setConvertTarget("LoanIQ");
     setConvertStatus("idle");
     setConvertOpen(true);
@@ -318,14 +332,18 @@ export default function DashboardPage() {
     <main className="p-6 max-w-[1440px] mx-auto">
       <div className="text-white mb-6">
         <h1 className="text-4xl font-semibold">Agreement Dashboard</h1>
-        <p className="text-white/80 mt-1">Manage and review all facility agreements</p>
+        <p className="text-white/80 mt-1">
+          Manage and review all facility agreements
+        </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-6 border-b border-white/20 mb-6">
         <button
           className={`pb-2 text-sm ${
-            tab === "recent" ? "text-white border-b-2 border-white" : "text-white/70"
+            tab === "recent"
+              ? "text-white border-b-2 border-white"
+              : "text-white/70"
           }`}
           onClick={() => setTab("recent")}
         >
@@ -333,7 +351,9 @@ export default function DashboardPage() {
         </button>
         <button
           className={`pb-2 text-sm ${
-            tab === "historical" ? "text-white border-b-2 border-white" : "text-white/70"
+            tab === "historical"
+              ? "text-white border-b-2 border-white"
+              : "text-white/70"
           }`}
           onClick={() => setTab("historical")}
         >
@@ -399,18 +419,24 @@ export default function DashboardPage() {
                   : Number(row?.facilitiesCount ?? 0);
 
                 const totalAmountCell = extractedJson
-                  ? formatMoneyCompact(getTotalFacilityAmount(extractedJson), "£")
+                  ? formatMoneyCompact(
+                      getTotalFacilityAmount(extractedJson),
+                      "£"
+                    )
                   : String(row?.totalAmount ?? "—");
 
                 const status = String(row?.status ?? "");
-                const updated = row?.lastUpdated ?? row?.updatedAt ?? row?.modifiedAt ?? "";
+                const updated =
+                  row?.lastUpdated ?? row?.updatedAt ?? row?.modifiedAt ?? "";
 
                 const hasAnyVersion = !!pickAnyVersionId(row);
                 const agreementId = Number(row?.agreementId);
 
                 return (
                   <tr
-                    key={String(row?.agreementId ?? row?.latestVersionId ?? Math.random())}
+                    key={String(
+                      row?.agreementId ?? row?.latestVersionId ?? Math.random()
+                    )}
                     className="border-t border-gray-100"
                   >
                     <td className="px-4 py-4">{row?.agreementName ?? "—"}</td>
@@ -438,85 +464,81 @@ export default function DashboardPage() {
                     <td className="px-4 py-4">
                       <div className="flex flex-wrap gap-2">
                         {/* Existing buttons (ADMIN/AGENT only) */}
-{!isLender && (
-  <>
-    <button
-      className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
-      onClick={() => onView(row)}
-      disabled={!hasAnyVersion}
-    >
-      View
-    </button>
-
-    <button
-      className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
-      onClick={() => onReExtract(row)}
-      disabled={!agreementId}
-    >
-      Re-extract
-    </button>
-  </>
-)}
-
-                        <button
-                          className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
-                          onClick={() => onParticipants(row)}
-                          disabled={!agreementId}
-                        >
-                          Participants
-                        </button>
-
-                        {String(status).toUpperCase() === "DRAFT" && (
+                        {!isLender && (
                           <>
                             <button
                               className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
-                              onClick={() => onEdit(row)}
+                              onClick={() => onView(row)}
                               disabled={!hasAnyVersion}
                             >
-                              Edit
+                              View
+                            </button>
+
+                            <button
+                              className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
+                              onClick={() => onReExtract(row)}
+                              disabled={!agreementId}
+                            >
+                              Re-extract
                             </button>
                             <button
                               className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
-                              onClick={() => onValidate(row)}
+                              onClick={() => onParticipants(row)}
+                              disabled={!agreementId}
                             >
-                              Validate
+                              Participants
                             </button>
                           </>
                         )}
 
+                        {String(status).toUpperCase() === "DRAFT" &&
+                          !isLender && (
+                            <>
+                              <button
+                                className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
+                                onClick={() => onEdit(row)}
+                                disabled={!hasAnyVersion}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="rounded-full border border-[#0B1F3B] px-4 py-2 text-[#0B1F3B] hover:bg-[#0B1F3B]/5"
+                                onClick={() => onValidate(row)}
+                              >
+                                Validate
+                              </button>
+                            </>
+                          )}
+
                         {/* ✅ LENDER-only mock actions */}
                         {isLender && (
-  <>
-    {/* Primary */}
-    <button
-      className="rounded-full bg-[#0B1F3B] text-white px-4 py-2 hover:opacity-90 shadow-sm"
-      onClick={() => openChatWithAgent(row)}
-    >
-      Chat with Agent
-    </button>
+                          <>
+                            <button
+                              className="rounded-full bg-[#0B1F3B] text-white px-4 py-2 hover:opacity-90 shadow-sm"
+                              onClick={() => openChatWithAgent(row)}
+                            >
+                              Chat with Agent
+                            </button>
 
-    {/* Secondary - prettier */}
-    <button
-      className="
-        rounded-full px-4 py-2 text-sm font-semibold
-        border border-white/0
-        bg-gradient-to-r from-[#1E40AF] to-[#2563EB]
-        text-white
-        shadow-sm
-        hover:brightness-110
-        active:brightness-95
-        flex items-center gap-2
-        whitespace-nowrap
-      "
-      onClick={() => openConvert(row)}
-      title="Convert the validated deal and push to LoanIQ / WSO / Oneiro (mock)"
-    >
-      
-      Convert
-    </button>
-  </>
-)}
-
+                            <button
+                              className="
+                                rounded-full px-4 py-2 text-sm font-semibold
+                                border border-white/0
+                                bg-gradient-to-r from-[#1E40AF] to-[#2563EB]
+                                text-white
+                                shadow-sm
+                                hover:brightness-110
+                                active:brightness-95
+                                flex items-center gap-2
+                                whitespace-nowrap
+                              "
+                              onClick={() => openConvert(row)}
+                              title="Convert the validated deal and push to LoanIQ / WSO / Oneiro (mock)"
+                            >
+                              Convert
+                            </button>
+                          </>
+                        )}
                       </div>
 
                       {!pickExtractedJson(row) && (
@@ -531,7 +553,10 @@ export default function DashboardPage() {
 
               {!loading && filtered.length === 0 && (
                 <tr>
-                  <td className="px-4 py-10 text-center text-gray-500" colSpan={8}>
+                  <td
+                    className="px-4 py-10 text-center text-gray-500"
+                    colSpan={8}
+                  >
                     No agreements found.
                   </td>
                 </tr>
@@ -553,7 +578,12 @@ export default function DashboardPage() {
           <div className="space-y-4">
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 max-h-[50vh] overflow-auto">
               {chatThread.map((m) => (
-                <div key={m.id} className={`mb-3 ${m.from === "LENDER" ? "text-right" : "text-left"}`}>
+                <div
+                  key={m.id}
+                  className={`mb-3 ${
+                    m.from === "LENDER" ? "text-right" : "text-left"
+                  }`}
+                >
                   <div className="text-[11px] text-gray-500">
                     {m.from} • {new Date(m.ts).toLocaleString()}
                   </div>
@@ -586,7 +616,8 @@ export default function DashboardPage() {
             </div>
 
             <div className="text-xs text-gray-600">
-              DealHUB keeps clarifications contextual, auditable, and aligned — reducing emails and reconciliation cycles.
+              DealHUB keeps clarifications contextual, auditable, and aligned —
+              reducing emails and reconciliation cycles.
             </div>
           </div>
         </Modal>
@@ -602,7 +633,12 @@ export default function DashboardPage() {
           onClose={() => setConvertOpen(false)}
           right={
             <button
-              onClick={() => downloadJson("facility_agreement_structured.json", dealPayloadForLender)}
+              onClick={() =>
+                downloadJson(
+                  "facility_agreement_structured.json",
+                  dealPayloadForLender
+                )
+              }
               className="px-3 py-1.5 rounded-lg bg-[#E6ECF5] text-[#0B1F3B] text-sm font-semibold hover:bg-gray-100"
             >
               Download JSON
@@ -611,11 +647,15 @@ export default function DashboardPage() {
         >
           <div className="space-y-4">
             <div className="rounded-xl border border-gray-200 p-4">
-              <div className="font-semibold text-[#0B1F3B]">Download the deal via API</div>
+              <div className="font-semibold text-[#0B1F3B]">
+                Download the deal via API
+              </div>
               <div className="text-sm text-gray-700 mt-2">
-                As a future development, lender banks can link their loan management system to DealHUB via API.
-                Using this workflow, structured deal information is transmitted automatically to populate setup
-                without manual re-keying — reducing onboarding time and operational risk.
+                As a future development, lender banks can link their loan
+                management system to DealHUB via API. Using this workflow,
+                structured deal information is transmitted automatically to
+                populate setup without manual re-keying — reducing onboarding
+                time and operational risk.
               </div>
             </div>
 
@@ -643,7 +683,9 @@ export default function DashboardPage() {
                 </button>
 
                 {convertStatus === "sent" && (
-                  <span className="text-sm text-green-700 font-semibold">Sent ✅ (mock)</span>
+                  <span className="text-sm text-green-700 font-semibold">
+                    Sent ✅ (mock)
+                  </span>
                 )}
               </div>
             </div>

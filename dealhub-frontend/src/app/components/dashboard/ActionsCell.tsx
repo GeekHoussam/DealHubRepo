@@ -1,6 +1,6 @@
-import { Eye, Edit3, ShieldCheck, RefreshCw, UsersRound } from 'lucide-react';
-import { AgreementSummary, UserRole } from '../../types';
-import { Button } from '../Button';
+import { Eye, Edit3, ShieldCheck, RefreshCw, UsersRound } from "lucide-react";
+import { AgreementSummary, UserRole } from "../../types";
+import { Button } from "../Button";
 
 interface ActionsCellProps {
   agreement: AgreementSummary;
@@ -21,18 +21,40 @@ export function ActionsCell({
   onView,
   role,
 }: ActionsCellProps) {
-  const isDraft = agreement.status === 'DRAFT';
+  const isDraft = agreement.status === "DRAFT";
 
-  if (role === 'LENDER') {
-    return <ActionButton icon={<Eye className="w-4 h-4" />} label="View" onClick={onView} />;
+  if (role === "LENDER") {
+    return (
+      <ActionButton
+        icon={<Eye className="w-4 h-4" />}
+        label="View"
+        onClick={onView}
+      />
+    );
   }
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <ActionButton icon={<Eye className="w-4 h-4" />} label="View" onClick={onView} />
-      {isDraft && <ActionButton icon={<Edit3 className="w-4 h-4" />} label="Edit" onClick={onEdit} disabled={!onEdit} />}
+      <ActionButton
+        icon={<Eye className="w-4 h-4" />}
+        label="View"
+        onClick={onView}
+      />
       {isDraft && (
-        <ActionButton icon={<ShieldCheck className="w-4 h-4" />} label="Validate" onClick={onValidate} disabled={!onValidate} />
+        <ActionButton
+          icon={<Edit3 className="w-4 h-4" />}
+          label="Edit"
+          onClick={onEdit}
+          disabled={!onEdit}
+        />
+      )}
+      {isDraft && (
+        <ActionButton
+          icon={<ShieldCheck className="w-4 h-4" />}
+          label="Validate"
+          onClick={onValidate}
+          disabled={!onValidate}
+        />
       )}
       <ActionButton
         icon={<RefreshCw className="w-4 h-4" />}

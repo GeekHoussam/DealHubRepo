@@ -1,5 +1,3 @@
-// src/app/api/contracts.ts
-
 /* -----------------------------
    Shared JSON type (Draft / Extraction / Golden Source)
 ----------------------------- */
@@ -19,9 +17,9 @@ export type LoginRequest = {
   password: string;
 };
 
-
 export interface LoginResponse {
-  accessToken: string;
+  accessToken?: string;
+  token?: string;
 }
 
 export interface MeResponse {
@@ -42,7 +40,6 @@ export interface CreateUserRequest {
   lenderId?: number | null; // required only when role === "LENDER"
 }
 
-// Keep response lightweight (matches your backend returning User)
 export interface UserDto {
   id: number;
   email: string;
@@ -68,7 +65,7 @@ export interface StartExtractionRequest {
   agreementId: number;
   documentId: number;
   documentType?: string;
-  // ✅ new (optional) - UI uses it, does not break other callers
+
   extractionProfile?: string;
 }
 
@@ -92,11 +89,9 @@ export interface ExtractionResponse {
   extracted?: JsonValue;
   result?: JsonValue;
   output?: JsonValue;
-  // ✅ aliases used by the new UI (optional, safe)
   resultJson?: JsonValue;
 
   error?: string;
-  // ✅ alias used by UI (optional, safe)
   errorMessage?: string;
 }
 
@@ -117,14 +112,13 @@ export interface AgreementRowDto {
   validatedAt?: string | null;
 }
 
-
 export interface AgreementVersion {
   id: number;
   agreementId?: number;
   status?: AgreementStatus;
 
-  payload?: JsonValue;        // draft JSON
-  goldenSource?: JsonValue;   // published JSON
+  payload?: JsonValue; // draft JSON
+  goldenSource?: JsonValue; // published JSON
 
   createdAt?: string;
   updatedAt?: string;
@@ -138,3 +132,5 @@ export interface CreateAgreementRequest {
   borrower: string;
   agent: string;
 }
+
+

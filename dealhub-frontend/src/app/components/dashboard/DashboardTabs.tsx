@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Filter, Search } from "lucide-react";
 import { AgreementsTable } from "./AgreementsTable";
 import { AgreementSummary, AgreementStatus } from "../../types";
-import { listRecentAgreements, listHistoricalAgreements } from "../../api/agreementsApi";
+import {
+  listRecentAgreementSummaries,
+  listHistoricalAgreementSummaries,
+} from "../../api/agreementsApi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../context/AuthContext";
@@ -10,50 +13,26 @@ import type { AgreementRowDto } from "../../api/contracts";
 
 type TabKey = "recent" | "historical";
 
-/**
- * Backend sends totalAmount as a string for hackathon UX (ex: "EUR 50,000,000").
- * UI expects a number, so we extract digits safely.
- */
 function parseTotalAmount(totalAmount: unknown): number {
   if (typeof totalAmount !== "string") return 0;
 
-  // Keep digits, dot, comma; remove currency and spaces
-  // Examples supported:
-  // "EUR 50,000,000" -> 50000000
-  // "USD 12.5m" (won't be perfect, but returns 12.5)
-  // "50 000 000" -> 50000000
-  const cleaned = totalAmount
-    .replace(/[^\d.,-]/g, "") // keep digits and separators
-    .trim();
-
+  const cleaned = totalAmount.replace(/[^\d.,-]/g, "").trim();
   if (!cleaned) return 0;
 
-  // Handle common thousand separators:
-  // If both comma and dot exist, assume comma = thousands, dot = decimals (e.g. 1,234.56)
-  // If only comma exists, assume comma = thousands (e.g. 50,000,000)
-  // If only dot exists, could be decimals or thousands; parseFloat handles "50000000" and "12.5"
   const hasComma = cleaned.includes(",");
   const hasDot = cleaned.includes(".");
 
   let normalized = cleaned;
 
-  if (hasComma && hasDot) {
-    normalized = cleaned.replace(/,/g, "");
-  } else if (hasComma && !hasDot) {
-    normalized = cleaned.replace(/,/g, "");
-  } else {
-    // only dot or none: keep as-is
-    normalized = cleaned;
-  }
+  if (hasComma && hasDot) normalized = cleaned.replace(/,/g, "");
+  else if (hasComma && !hasDot) normalized = cleaned.replace(/,/g, "");
+  else normalized = cleaned;
 
   const n = Number(normalized);
   return Number.isFinite(n) ? n : 0;
 }
 
 function toAgreementSummary(row: AgreementRowDto): AgreementSummary {
-  // IMPORTANT: backend record fields are:
-  // agreementId, agreementName, borrower, agent, facilitiesCount, totalAmount (string), status, lastUpdated, validatedAt
-
   const id = row.agreementId != null ? String(row.agreementId) : "";
 
   return {
@@ -61,9 +40,10 @@ function toAgreementSummary(row: AgreementRowDto): AgreementSummary {
     name: row.agreementName ?? (id ? `Agreement #${id}` : "Agreement"),
     borrower: row.borrower ?? "",
     agent: row.agent ?? "—",
-    facilitiesCount: typeof row.facilitiesCount === "number" ? row.facilitiesCount : 0,
+    facilitiesCount:
+      typeof row.facilitiesCount === "number" ? row.facilitiesCount : 0,
     totalAmount: parseTotalAmount(row.totalAmount),
-    status: ((row.status ?? "DRAFT") as unknown) as AgreementStatus,
+    status: (row.status ?? "DRAFT") as unknown as AgreementStatus,
     updatedAt: row.lastUpdated ? String(row.lastUpdated) : "",
     validatedAt: row.validatedAt ? String(row.validatedAt) : undefined,
   };
@@ -76,21 +56,22 @@ export function DashboardTabs() {
   const [recentLoading, setRecentLoading] = useState(false);
   const [historicalLoading, setHistoricalLoading] = useState(false);
 
-  const [statusFilter, setStatusFilter] = useState<"ALL" | AgreementStatus>("ALL");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | AgreementStatus>(
+    "ALL"
+  );
   const [search, setSearch] = useState("");
 
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Keep role as-is from backend (ADMIN / AGENT / LENDER)
   const role = (user?.role as any) ?? "AGENT";
 
   useEffect(() => {
     const fetchRecent = async () => {
       setRecentLoading(true);
       try {
-        const rows = await listRecentAgreements(14);
-        setRecentData(rows.map(toAgreementSummary));
+        const rows = await listRecentAgreementSummaries(14);
+        setRecentData(rows);
       } catch {
         toast.error("Failed to load recent agreements");
       } finally {
@@ -104,8 +85,8 @@ export function DashboardTabs() {
     const fetchHistorical = async () => {
       setHistoricalLoading(true);
       try {
-        const rows = await listHistoricalAgreements(search);
-        setHistoricalData(rows.map(toAgreementSummary));
+        const rows = await listHistoricalAgreementSummaries(search);
+        setHistoricalData(rows);
       } catch {
         toast.error("Failed to load historical agreements");
       } finally {
@@ -129,11 +110,6 @@ export function DashboardTabs() {
 
   const handleView = (id: string) => navigate(`/agreements/${id}`);
 
-  /**
-   * Re-extract cannot be done from this screen because backend endpoint is:
-   * POST /extractions/start  (needs { agreementId, documentId })
-   * So we route user to the agreement page where upload/start extraction happens.
-   */
   const handleReextract = async (id: string) => {
     navigate(`/agreements/${id}?action=reextract`);
     toast.info("Upload a new document to re-run extraction");
@@ -193,7 +169,9 @@ export function DashboardTabs() {
         onEdit={handleView}
         onValidate={handleView}
         onReextract={handleReextract}
-        onManageParticipants={(id) => toast.info(`Participants management coming soon for #${id}`)}
+        onManageParticipants={(id) =>
+          toast.info(`Participants management coming soon for #${id}`)
+        }
         role={role}
         isLoading={activeTab === "recent" ? recentLoading : historicalLoading}
         emptyMessage="No agreements found matching your criteria"
@@ -216,7 +194,9 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={`pb-3 text-sm font-semibold transition border-b-2 ${
-        active ? "text-white border-white" : "text-blue-100 border-transparent hover:text-white hover:border-white/70"
+        active
+          ? "text-white border-white"
+          : "text-blue-100 border-transparent hover:text-white hover:border-white/70"
       }`}
     >
       {label}
