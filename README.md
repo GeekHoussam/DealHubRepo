@@ -53,13 +53,14 @@ This repository is structured as a **monorepo** containing both backend and fron
 ---
 
 ## ⚙️ Backend Setup (Local)
-
+```bash
 cd dealhub-backend
 mvn clean install
 mvn spring-boot:run
-
+```
 
 ## 🎨 Frontend Setup (Local)
+```bash
 cd dealhub-frontend
 npm install
 npm run dev
